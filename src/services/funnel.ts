@@ -18,6 +18,11 @@ import { supabase } from '@/integrations/supabase/client';
 export type FunnelEvent =
   | 'arrived'
   | 'engaged'
+  | 'diagnostic_started'
+  | 'diagnostic_completed'
+  | 'learning_attempted'
+  | 'review_scheduled'
+  | 'review_completed'
   | 'solved'
   | 'identified'
   | 'committed'
@@ -54,6 +59,7 @@ interface TrackArgs {
 
 const VISITOR_KEY = 'analytics_visitor_id';
 const SESSION_KEY = 'careerprep_tab_session';
+const LAST_VISIT_KEY = 'careerprep_last_visit_date';
 
 /** The one durable anonymous id, shared with the analytics service. */
 function visitorId(): string {
@@ -106,4 +112,23 @@ export async function trackOnce(key: string, args: TrackArgs): Promise<void> {
   if (localStorage.getItem(k)) return;
   localStorage.setItem(k, '1');
   await track(args);
+}
+
+/**
+ * A return is a visit on a later calendar day, not another render or another
+ * tab in the same session. This keeps the retention event useful without
+ * storing contact details or blocking anonymous learners.
+ */
+export async function trackReturnVisit(now = new Date()): Promise<void> {
+  const today = now.toISOString().slice(0, 10);
+  const previous = localStorage.getItem(LAST_VISIT_KEY);
+  localStorage.setItem(LAST_VISIT_KEY, today);
+  if (!previous || previous === today) return;
+
+  const elapsedMs = now.getTime() - new Date(`${previous}T00:00:00.000Z`).getTime();
+  await track({
+    event: 'returned',
+    surface: 'lobby',
+    metadata: { days_since_previous_visit: Math.max(1, Math.floor(elapsedMs / 86_400_000)) },
+  });
 }

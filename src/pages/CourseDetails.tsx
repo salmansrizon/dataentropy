@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { track } from "@/services/funnel";
 
 interface Course {
   id: string;
@@ -288,6 +289,8 @@ export default function CourseDetails() {
 
       if (error) throw error;
 
+      void track({ event: 'enrolled', surface: 'completion', subjectType: 'course', subjectId: courseId });
+
       toast({
         title: "Success",
         description: "Successfully enrolled in the course!",
@@ -385,6 +388,9 @@ export default function CourseDetails() {
   }
 
   const isFree = course.is_free || (!course.price && !course.discounted_price);
+  const reviewAverage = reviews.length
+    ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
+    : null;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -406,11 +412,7 @@ export default function CourseDetails() {
             </div>
 
             {isFree && (
-              <Badge className="mb-3 inline-flex items-center gap-2 bg-success hover:bg-success/90 text-success-foreground px-3 py-1 text-xs font-bold border-none shadow-sm w-fit">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-foreground"></span>
-                </span>
+              <Badge className="mb-3 inline-flex w-fit items-center gap-2 border-none bg-success-soft px-3 py-1 text-xs font-bold text-success-strong shadow-sm hover:bg-success-soft">
                 FREE
               </Badge>
             )}
@@ -419,13 +421,15 @@ export default function CourseDetails() {
               {course.title}
             </h1>
 
-            <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
-              <div className="flex items-center gap-1.5 text-foreground font-bold bg-secondary px-2 py-0.5 rounded">
-                <Star className="w-4 h-4 text-warning fill-warning" />
-                <span>{course.rating || '4.8'}</span>
-              </div>
-              <span className="text-muted-foreground underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
-              <span className="text-foreground font-medium">{course.student_count || 0} students</span>
+            <div className="mb-6 flex flex-wrap items-center gap-4 text-sm">
+              {reviewAverage !== null ? (
+                <div className="flex items-center gap-1.5 rounded bg-secondary px-2 py-1 font-bold text-foreground" aria-label={`${reviewAverage.toFixed(1)} out of 5 from ${reviews.length} approved reviews`}>
+                  <Star className="h-4 w-4 fill-warning text-warning" aria-hidden="true" />
+                  <span>{reviewAverage.toFixed(1)}</span>
+                  <span className="font-medium text-muted-foreground">({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})</span>
+                </div>
+              ) : <span className="rounded bg-secondary px-2 py-1 font-medium text-muted-foreground">No learner reviews yet</span>}
+              {(course.student_count ?? 0) > 0 && <span className="font-medium text-foreground">{course.student_count} enrolled learners</span>}
             </div>
 
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-3xl">
@@ -674,10 +678,13 @@ export default function CourseDetails() {
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Send className="w-4 h-4 text-accent" /> Write a Review</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Input value={reviewData.student_name} onChange={(e) => setReviewData(p => ({...p, student_name: e.target.value}))} placeholder="Your name" />
-                      <Input type="email" value={reviewData.student_email} onChange={(e) => setReviewData(p => ({...p, student_email: e.target.value}))} placeholder="Email" />
+                      <div><label htmlFor="review-name" className="mb-2 block text-sm font-semibold">Your name</label><Input id="review-name" autoComplete="name" value={reviewData.student_name} onChange={(e) => setReviewData(p => ({...p, student_name: e.target.value}))} /></div>
+                      <div><label htmlFor="review-email" className="mb-2 block text-sm font-semibold">Email <span className="font-normal text-muted-foreground">(not published)</span></label><Input id="review-email" type="email" autoComplete="email" value={reviewData.student_email} onChange={(e) => setReviewData(p => ({...p, student_email: e.target.value}))} /></div>
                     </div>
-                    <Textarea value={reviewData.review_text} onChange={(e) => setReviewData(p => ({...p, review_text: e.target.value}))} placeholder="Share your experience..." rows={3} />
+                    <fieldset><legend className="mb-2 text-sm font-semibold">Rating</legend><div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" className="grid h-11 w-11 place-items-center rounded-lg border border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setReviewData(p => ({ ...p, rating }))} aria-label={`${rating} star${rating === 1 ? '' : 's'}`} aria-pressed={reviewData.rating === rating}><Star className={`h-5 w-5 ${rating <= reviewData.rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`} aria-hidden="true" /></button>)}
+                    </div></fieldset>
+                    <div><label htmlFor="review-text" className="mb-2 block text-sm font-semibold">What changed for you?</label><Textarea id="review-text" value={reviewData.review_text} onChange={(e) => setReviewData(p => ({...p, review_text: e.target.value}))} placeholder="Share a specific outcome or useful part of the course" rows={3} /></div>
                     <Button onClick={async () => {
                       if (!reviewData.student_name || !reviewData.student_email) { toast({ title: "Error", description: "Required fields missing", variant: "destructive" }); return; }
                       setSubmittingReview(true);
@@ -821,9 +828,10 @@ export default function CourseDetails() {
           onOpenChange={setShowEnrollmentModal}
           title={`Enroll in ${course.title}`}
           isFree={isFree}
+          collectWhatsapp={!isFree}
           priceLabel={isFree ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
           onSubmit={handleEnrollment}
-          extraFields={[
+          extraFields={isFree ? [] : [
             { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
             { key: 'institute_name', label: 'Institute/Organization', placeholder: 'e.g. University/Company', required: true }
           ]}

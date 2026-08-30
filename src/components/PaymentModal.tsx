@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { addMinutes } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,6 @@ import { cn } from "@/lib/utils";
 import {
   CreditCard,
   CheckCircle2,
-  Timer,
   Tag,
   User,
   Mail,
@@ -48,6 +46,8 @@ export interface PaymentModalProps {
   priceLabel?: string;
   /** Extra form fields beyond Name / Email / WhatsApp */
   extraFields?: PaymentModalField[];
+  /** Ask for WhatsApp only when fulfillment or support genuinely needs it. */
+  collectWhatsapp?: boolean;
   /** Called with form data when user clicks submit.
    *  The consumer is responsible for the Supabase insert. */
   onSubmit: (data: PaymentModalData) => Promise<void>;
@@ -65,6 +65,7 @@ const PaymentModal = ({
   isFree,
   priceLabel,
   extraFields = [],
+  collectWhatsapp = true,
   onSubmit,
   submitLabel = "Confirm Booking",
   freeSubmitLabel = "Confirm Free Booking",
@@ -79,8 +80,6 @@ const PaymentModal = ({
   const [extras, setExtras] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad" | "">("");
   const [transactionId, setTransactionId] = useState("");
-  const [paymentDeadline, setPaymentDeadline] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -95,8 +94,6 @@ const PaymentModal = ({
         setExtras({});
         setPaymentMethod("");
         setTransactionId("");
-        setPaymentDeadline(null);
-        setTimeLeft("");
         setSubmitting(false);
         setSuccess(false);
       }, 300);
@@ -104,31 +101,9 @@ const PaymentModal = ({
     }
   }, [open]);
 
-  // ── Payment countdown ────────────────────────────────────────
-  useEffect(() => {
-    if (!paymentDeadline) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = paymentDeadline.getTime() - now.getTime();
-      if (diff <= 0) {
-        setTimeLeft("Expired");
-        clearInterval(interval);
-        return;
-      }
-      const mins = Math.floor(diff / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${mins}:${secs.toString().padStart(2, "0")}`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [paymentDeadline]);
-
   // ── Helpers ──────────────────────────────────────────────────
   const handleSelectPaymentMethod = (method: "bkash" | "nagad") => {
     setPaymentMethod(method);
-    if (!paymentDeadline) {
-      const windowMins = paymentSettings?.payment_window_minutes || 30;
-      setPaymentDeadline(addMinutes(new Date(), windowMins));
-    }
   };
 
   const handleSubmit = async () => {
@@ -154,10 +129,6 @@ const PaymentModal = ({
       }
       if (!transactionId.trim()) {
         toast({ title: "Error", description: "Transaction ID is strictly required. Check your SMS.", variant: "destructive" });
-        return;
-      }
-      if (timeLeft === "Expired") {
-        toast({ title: "Error", description: "Payment window has expired. Please close and try again.", variant: "destructive" });
         return;
       }
     }
@@ -188,8 +159,7 @@ const PaymentModal = ({
     submitting ||
     !name ||
     !email ||
-    (!isFree && (!paymentMethod || !transactionId.trim())) ||
-    timeLeft === "Expired";
+    (!isFree && (!paymentMethod || !transactionId.trim()));
 
   // ── Render ───────────────────────────────────────────────────
   return (
@@ -241,10 +211,12 @@ const PaymentModal = ({
             <div className="space-y-4 pt-2">
               {/* Base fields */}
               <div className="space-y-1.5">
-                <Label className="text-sm font-semibold">Full Name *</Label>
+                <Label htmlFor="payment-name" className="text-sm font-semibold">Full Name *</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="payment-name"
+                    autoComplete="name"
                     className="pl-9"
                     placeholder="Your full name"
                     value={name}
@@ -254,10 +226,12 @@ const PaymentModal = ({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm font-semibold">Email *</Label>
+                <Label htmlFor="payment-email" className="text-sm font-semibold">Email *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="payment-email"
+                    autoComplete="email"
                     className="pl-9"
                     type="email"
                     placeholder="your@email.com"
@@ -267,26 +241,31 @@ const PaymentModal = ({
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-sm font-semibold">WhatsApp Number</Label>
+              {collectWhatsapp && <div className="space-y-1.5">
+                <Label htmlFor="payment-whatsapp" className="text-sm font-semibold">WhatsApp Number</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="payment-whatsapp"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     className="pl-9"
                     placeholder="01XXXXXXXXX"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
                   />
                 </div>
-              </div>
+              </div>}
 
               {/* Extra fields */}
               {extraFields.map((field) => (
                 <div key={field.key} className="space-y-1.5">
-                  <Label className="text-sm font-semibold">
+                  <Label htmlFor={`payment-extra-${field.key}`} className="text-sm font-semibold">
                     {field.label} {field.required && "*"}
                   </Label>
                   <Input
+                    id={`payment-extra-${field.key}`}
                     type={field.type || "text"}
                     placeholder={field.placeholder}
                     value={extras[field.key] || ""}
@@ -324,7 +303,7 @@ const PaymentModal = ({
                   </div>
 
                   {/* QR / account / txn input */}
-                  {paymentMethod && timeLeft !== "Expired" && (
+                  {paymentMethod && (
                     <div
                       className={cn(
                         "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
@@ -334,10 +313,7 @@ const PaymentModal = ({
                       )}
                     >
                       <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
-                          <Timer className="h-4 w-4" />
-                          {timeLeft} left to pay
-                        </div>
+                        <div className="text-left text-sm font-semibold text-foreground">Payment details</div>
                         {priceLabel && (
                           <h4 className="font-semibold text-foreground text-sm">
                             Fee:{" "}
@@ -414,27 +390,6 @@ const PaymentModal = ({
                       immediately.
                     </p>
                   </div>
-                </div>
-              )}
-
-              {/* ── Expired banner ──────────────────────────── */}
-              {timeLeft === "Expired" && !isFree && (
-                <div className="bg-destructive/10 rounded-lg p-4 text-center">
-                  <p className="text-destructive font-semibold">
-                    Payment window expired.
-                  </p>
-                  <Button
-                    className="mt-2"
-                    variant="outline"
-                    onClick={() => {
-                      setPaymentMethod("");
-                      setPaymentDeadline(null);
-                      setTimeLeft("");
-                      setTransactionId("");
-                    }}
-                  >
-                    Reset &amp; Try Again
-                  </Button>
                 </div>
               )}
 

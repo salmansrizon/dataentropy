@@ -34,6 +34,7 @@ const TopicPage = () => {
     description: data ? `${data.topic.what_it_is} ${data.topic.why_it_matters}`.slice(0, 200) : undefined,
   });
   const [open, setOpen] = useState(false);
+  const [recallOpen, setRecallOpen] = useState(false);
 
   if (loading) {
     return (
@@ -99,11 +100,19 @@ const TopicPage = () => {
 
         <TopicSections sections={sections} />
 
-        <section className="mt-6">
-          <h2 className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-            Practise it ({practice.length})
-          </h2>
+        <section className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5" aria-labelledby="recall-heading">
+          <p className="text-sm font-bold text-primary">Retrieve before you practise</p>
+          <h2 id="recall-heading" className="mt-1 text-lg font-bold">Close the notes in your mind: how would you explain {topic.title}?</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Say one sentence out loud or write it down, then name one decision this topic helps you make.</p>
+          <Button variant="outline" className="mt-4 min-h-11 rounded-xl" onClick={() => setRecallOpen((value) => !value)} aria-expanded={recallOpen} aria-controls="recall-check">
+            {recallOpen ? 'Hide self-check' : 'Reveal a self-check'}
+          </Button>
+          {recallOpen && <div id="recall-check" className="mt-4 rounded-xl bg-card p-4 text-sm leading-6"><strong>A useful answer should connect the idea to this outcome:</strong> {topic.why_it_matters}</div>}
+        </section>
 
+        <section className="mt-6">
+          <h2 className="mb-1 text-lg font-bold">Try it independently</h2>
+          <p className="mb-3 text-sm text-muted-foreground">Attempt before reopening the explanation. Feedback will point to the next useful step.</p>
           {practice.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               No practice questions attached to this topic yet.
@@ -114,7 +123,7 @@ const TopicPage = () => {
                 <button
                   key={q.id}
                   onClick={() => navigate(`/career-prep/solve/${q.slug}`)}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:border-primary/40"
+                  className="flex min-h-12 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:border-primary/40"
                 >
                   {q.question_type === 'mcq'
                     ? <ListChecks className="h-4 w-4 shrink-0 text-series-data" />
@@ -131,9 +140,7 @@ const TopicPage = () => {
 
         {caseStudies.length > 0 && (
           <section className="mt-6">
-            <h2 className="mb-1 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-              Apply it ({caseStudies.length})
-            </h2>
+            <h2 className="mb-1 text-lg font-bold">Apply it in context ({caseStudies.length})</h2>
             <p className="mb-3 text-xs text-muted-foreground">
               A real scenario, worked through one decision at a time — the shape the interview round
               actually takes.

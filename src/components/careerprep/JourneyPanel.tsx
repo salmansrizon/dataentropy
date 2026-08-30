@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
-  Flame, Zap, Trophy, ChevronRight, Play, RotateCcw, CalendarDays, Library,
+  Zap, Trophy, ChevronRight, Play, RotateCcw, CalendarDays, Library,
 } from 'lucide-react';
 import { useXPStats } from '@/hooks/useCareerPrep';
 import {
@@ -19,6 +19,7 @@ import JourneyOffers from './JourneyOffers';
 import { JourneyPanelSkeleton } from '@/components/ui/skeletons';
 import JourneyTimeline from './JourneyTimeline';
 import ClaimProfileCard from './ClaimProfileCard';
+import { getDueReviews } from '@/services/reviewSchedule';
 
 // Variant A — "Journey First". The plan leads the page, and the Library sits on
 // its own route behind a card, so a learner picks structure or practice.
@@ -45,6 +46,7 @@ interface Props {
 
 const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { journeys, loading: journeysLoading } = useJourneys();
   const { enrolment } = useActiveEnrolment();
   const { plan } = useJourneyPlan(enrolment?.journey_id);
@@ -59,6 +61,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const { daily: journeyDaily } = useJourneyDailyChallenge(enrolment?.journey_id);
   const poolSlugs = new Set(pool.map((q) => q.slug));
   const { items: nextUp } = useNextUp(3, enrolment ? poolSlugs : undefined);
+  const dueReviews = getDueReviews().filter((review) => !enrolment || poolSlugs.has(review.slug)).slice(0, 3);
 
   // The global deck still serves anyone who has not chosen a plan yet.
   const daily = enrolment
@@ -74,6 +77,20 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const planPct = planTopics.length ? Math.round((doneCount / planTopics.length) * 100) : 0;
 
   const journey = journeys.find((j) => j.id === enrolment?.journey_id);
+  const preferredRole = searchParams.get('role');
+  const roleKeywords = preferredRole === 'AI engineer'
+    ? ['ai engineer', 'ai engineering']
+    : preferredRole === 'Data engineer'
+      ? ['data engineer', 'data engineering']
+      : preferredRole === 'Data analyst'
+        ? ['data analyst', 'data analytics']
+        : [];
+  const recommendedJourney = roleKeywords.length
+    ? journeys.find((candidate) => roleKeywords.some((keyword) => candidate.title.toLowerCase().includes(keyword)))
+    : undefined;
+  const orderedJourneys = recommendedJourney
+    ? [recommendedJourney, ...journeys.filter((candidate) => candidate.id !== recommendedJourney.id)]
+    : journeys;
   const [showSwitcher, setShowSwitcher] = useState(false);
 
   // The plan is the whole page here, so an empty frame while it loads reads as
@@ -90,8 +107,8 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           <CardContent className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                  Your Journey
+                <p className="text-sm font-bold text-muted-foreground">
+                  Progress &amp; next step
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-extrabold">{journey.title}</h2>
@@ -100,7 +117,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
                       the title rather than a button in the action row. */}
                   <button
                     onClick={() => setShowSwitcher((v) => !v)}
-                    className="text-[11px] font-bold text-muted-foreground underline underline-offset-4 hover:text-primary"
+                    className="min-h-11 px-2 text-sm font-bold text-muted-foreground underline underline-offset-4 hover:text-primary"
                   >
                     {showSwitcher ? 'Close' : 'View other journeys'}
                   </button>
@@ -115,9 +132,6 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
                 })()}
               </div>
               <div className="flex items-center gap-4 text-sm">
-                <span className="inline-flex items-center gap-1.5 font-bold">
-                  <Flame className="h-4 w-4 text-warning" />{stats.streak}
-                </span>
                 <span className="inline-flex items-center gap-1.5 font-bold">
                   <Zap className="h-4 w-4 text-primary" />{stats.xp.toLocaleString()}
                 </span>
@@ -197,24 +211,44 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
       ) : (
         <Card className="mb-6 bg-primary/5 border-primary/20">
           <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-extrabold mb-2">What are you working toward?</h2>
+            <p className="text-sm font-bold text-primary">{recommendedJourney ? 'Your recommended journey' : 'Choose a journey'}</p>
+            <h2 className="mb-2 mt-1 text-2xl font-extrabold">{recommendedJourney?.title ?? 'What are you working toward?'}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              One question. Skip it and browse — nothing is locked.
+              {recommendedJourney
+                ? `Recommended from your ${preferredRole} goal. Your ${searchParams.get('level') ?? 'current level'} and ${searchParams.get('time') ?? 'available time'} each week are planning preferences; they do not change this Journey yet. You can choose another Journey without losing shared Topic progress.`
+                : 'One question. Skip it and browse — nothing is locked.'}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {journeys.map((j) => (
+              {orderedJourneys.map((j) => (
                 <Button
                   key={j.id}
                   className="rounded-full"
+                  variant={recommendedJourney && j.id !== recommendedJourney.id ? 'outline' : 'default'}
                   disabled={enrol.isPending}
                   onClick={() => enrol.mutate(j.id)}
                 >
-                  {j.title}
+                  {recommendedJourney?.id === j.id ? `Start ${j.title}` : j.title}
                 </Button>
               ))}
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {dueReviews.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-warning/30 bg-warning-soft p-4">
+          <h3 className="text-sm font-bold text-warning-foreground">Review due</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Retrieve these without notes first. A correct attempt schedules the next review farther out.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {dueReviews.map((review) => (
+              <button key={review.slug} onClick={() => onOpenQuestion(review.slug)} className="flex min-h-14 items-center gap-3 rounded-xl border border-warning/30 bg-card p-3 text-left transition-colors hover:border-warning">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning-soft text-warning"><RotateCcw className="h-4 w-4" aria-hidden="true" /></span>
+                <span className="min-w-0 flex-1"><span className="block line-clamp-2 text-sm font-bold">{review.title}</span><span className="block truncate text-xs text-muted-foreground">{review.industry} · {review.difficulty}</span></span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <ClaimProfileCard />
@@ -224,7 +258,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           rather than the Library being buried. */}
       <button
         onClick={() => navigate(journey ? `/career-prep/library?journey=${journey.slug}` : '/career-prep/library')}
-        className="mb-6 flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors hover:bg-muted/50"
+        className="mb-6 flex min-h-14 w-full items-center gap-4 rounded-2xl border p-4 text-left transition-colors hover:bg-muted/50"
       >
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
           <Library className="h-5 w-5" />
@@ -233,7 +267,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           <span className="block text-sm font-bold">
             {journey ? `Practise ${journey.title} questions` : 'Just practise questions'}
           </span>
-          <span className="block text-xs text-muted-foreground">
+          <span className="block text-sm leading-5 text-muted-foreground">
             {journey
               ? `${pool.length} questions and case studies from your plan — browse and filter.`
               : `${questions.filter((q) => !q.parent_id).length} questions and case studies — browse and filter, no Journey needed.`}
@@ -245,14 +279,14 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
       {daily?.question && (
         <button
           onClick={() => onOpenQuestion(daily.question!.slug)}
-          className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+          className="mb-6 flex min-h-14 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
         >
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
             <CalendarDays className="h-5 w-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-              Today's challenge
+            <span className="block text-sm font-bold text-primary">
+              Do now · Today&apos;s question
             </span>
             <span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span>
             <span className="block truncate text-xs text-muted-foreground">
@@ -266,8 +300,8 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
 
       {nextUp.length > 0 && (
         <div className="mb-6">
-          <h3 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-            Next up
+          <h3 className="mb-3 text-sm font-bold text-muted-foreground">
+            Review &amp; practice
           </h3>
           <div className="grid gap-2 sm:grid-cols-3">
             {nextUp.map((item) => (
@@ -278,7 +312,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
                     ? navigate(`/roadmaps/${item.roadmap_slug}`)
                     : onOpenQuestion(item.slug)
                 }
-                className="flex items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/50 transition-colors"
+                className="flex min-h-14 items-center gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-muted/50"
               >
                 <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${
                   item.kind === 'retry' ? 'bg-warning-soft text-warning' : 'bg-primary/10 text-primary'
@@ -300,16 +334,12 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
         </div>
       )}
 
-      {/* Cross-sell sits above the Library in the Journey-first layout, so the
-          offer is seen in the context of the plan rather than after a long list. */}
-      <JourneyOffers journeyId={journey?.id ?? journeys[0]?.id} />
-
       {journey && plan.length > 0 && (
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                The plan
+              <h3 className="text-sm font-bold text-muted-foreground">
+                Your plan
               </h3>
               <span className="text-xs text-muted-foreground">
                 {plan.reduce((n, r) => n + (r.duration_weeks ?? 0), 0)} weeks total
@@ -323,6 +353,12 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           </CardContent>
         </Card>
       )}
+
+      <div className="mb-3 mt-8">
+        <h3 className="text-sm font-bold text-muted-foreground">Go deeper when it helps</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Optional courses, live sessions, and resources matched to your current journey.</p>
+      </div>
+      <JourneyOffers journeyId={journey?.id ?? journeys[0]?.id} />
 
     </section>
   );

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/Navbar';
 import { useQuestions } from '@/hooks/useCareerPrep';
 import JourneyPanel from '@/components/careerprep/JourneyPanel';
-import { track, trackOnce } from '@/services/funnel';
+import { trackOnce } from '@/services/funnel';
 
 /**
  * Career Prep is the Journey dashboard.
@@ -26,24 +26,22 @@ const CareerPrep = () => {
 
   useEffect(() => {
     void trackOnce('arrived', { event: 'arrived', surface: 'lobby' });
-    // "returned" is the only retention-side stage, so it fires every visit.
-    void track({ event: 'returned', surface: 'lobby' });
   }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <div className="relative pt-32 pb-8 overflow-hidden">
+      <div className="relative overflow-hidden pb-8 pt-28 sm:pt-32">
         <main className="container max-w-7xl mx-auto px-4 relative z-10">
           <div className="flex flex-col gap-4 mb-2">
-            <Badge className="bg-primary/10 text-primary border-primary/20 w-fit px-4 py-1.5 font-semibold">
-              Mission Command
+            <Badge className="w-fit border-primary/20 bg-primary/10 px-4 py-1.5 font-semibold text-primary">
+              Your learning workspace
             </Badge>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="text-primary">Career Missions</span>
+              <span className="text-primary">Keep building evidence.</span>
               <br />
-              <span className="text-foreground">Master your skills by solving real-world Challenges</span>
+              <span className="text-foreground">One useful next step at a time.</span>
             </h1>
           </div>
         </main>

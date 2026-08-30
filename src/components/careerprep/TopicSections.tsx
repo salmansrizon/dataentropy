@@ -20,7 +20,7 @@ const TopicSections = ({ sections }: Props) => {
 
   return (
     <section className="mt-6">
-      <h2 className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
+      <h2 className="mb-3 text-sm font-bold text-muted-foreground">
         In depth ({sections.length})
       </h2>
 
@@ -31,7 +31,9 @@ const TopicSections = ({ sections }: Props) => {
             <div key={section.id} className="overflow-hidden rounded-xl border border-border bg-card">
               <button
                 onClick={() => setOpen(isOpen ? null : section.id)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                className="flex min-h-12 w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                aria-expanded={isOpen}
+                aria-controls={`topic-section-${section.id}`}
               >
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-black text-muted-foreground">
                   {i + 1}
@@ -43,13 +45,13 @@ const TopicSections = ({ sections }: Props) => {
               </button>
 
               {isOpen && (
-                <div className="border-t border-border/60 px-4 pb-4 pt-3">
-                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-foreground/90">
+                <div id={`topic-section-${section.id}`} className="border-t border-border/60 px-4 pb-4 pt-3">
+                  <p className="whitespace-pre-line text-base leading-7 text-foreground/90">
                     {section.body}
                   </p>
                   {section.diagram && <TopicDiagram spec={section.diagram} />}
                   {section.takeaway && (
-                    <p className="mt-3 rounded-lg border-l-2 border-primary bg-primary/5 px-3 py-2 text-[12px] font-semibold">
+                    <p className="mt-3 rounded-lg border-l-2 border-primary bg-primary/5 px-3 py-2 text-sm font-semibold leading-6">
                       {section.takeaway}
                     </p>
                   )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +8,7 @@ import { CourseCountdown } from '@/components/CourseCountdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GraduationCap, CalendarDays, BookDown, CheckCircle2, Download } from 'lucide-react';
-import { track } from '@/services/funnel';
+import { track, trackOnce } from '@/services/funnel';
 
 // One offer per Surface, by fixed priority (§5). Which course, webinar and
 // ebook appear is an explicit per-Journey mapping set by an admin — not tag
@@ -67,7 +67,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
         ebook_id: offers.ebook.id,
         user_id: session?.user?.id ?? null,
         email: email.trim().toLowerCase(),
-        phone: phone.trim(),
+        phone: phone.trim() || null,
         surface: 'lobby',
         delivered_at: new Date().toISOString(),
       });
@@ -92,16 +92,31 @@ const JourneyOffers = ({ journeyId }: Props) => {
     onError: (e: any) => setError(e.message ?? 'Could not save that — try again.'),
   });
 
-  if (!offers) return null;
-  const { course, webinar, ebook } = offers;
-  if (!course && !webinar && !ebook) return null;
+  const course = offers?.course ?? null;
+  const webinar = offers?.webinar ?? null;
+  const ebook = offers?.ebook ?? null;
+
+  useEffect(() => {
+    [
+      course && { type: 'course' as const, id: course.id },
+      webinar && { type: 'webinar' as const, id: webinar.id },
+      ebook && { type: 'ebook' as const, id: ebook.id },
+    ].filter(Boolean).forEach((offer) => {
+      if (!offer) return;
+      void trackOnce(`offer-shown-${offer.type}-${offer.id}`, {
+        event: 'offer_shown', surface: 'lobby', subjectType: offer.type, subjectId: offer.id, journeyId,
+      });
+    });
+  }, [course?.id, ebook?.id, journeyId, webinar?.id]);
+
+  if (!offers || (!course && !webinar && !ebook)) return null;
 
   return (
     <div className="mb-6 grid gap-4 md:grid-cols-3">
       {course && (
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
-            <p className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
               <GraduationCap className="h-3.5 w-3.5" /> Recommended course
             </p>
             <p className="font-semibold">{course.title}</p>
@@ -125,7 +140,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
       {webinar && (
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
-            <p className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
               <CalendarDays className="h-3.5 w-3.5" /> Upcoming webinar
             </p>
             <p className="font-semibold">{webinar.title}</p>
@@ -149,7 +164,10 @@ const JourneyOffers = ({ journeyId }: Props) => {
               size="sm"
               variant="outline"
               className="mt-auto w-full rounded-full"
-              onClick={() => navigate(`/webinar/${webinar.id}`)}
+              onClick={() => {
+                void track({ event: 'offer_clicked', surface: 'lobby', subjectType: 'webinar', subjectId: webinar.id, journeyId });
+                navigate(`/webinar/${webinar.id}`);
+              }}
             >
               Register
             </Button>
@@ -160,7 +178,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
       {ebook && (
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
-            <p className="mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
               <BookDown className="h-3.5 w-3.5" /> Free resource
             </p>
             <p className="font-semibold">{ebook.title}</p>
@@ -189,23 +207,29 @@ const JourneyOffers = ({ journeyId }: Props) => {
               </div>
             ) : (
               <div className="mt-auto space-y-2">
+                <label htmlFor="ebook-email" className="block text-sm font-semibold">Email <span className="text-danger" aria-hidden="true">*</span></label>
                 <Input
+                  id="ebook-email"
                   type="email"
                   inputMode="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
-                  className="h-9"
+                  className="min-h-11"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 />
+                <label htmlFor="ebook-phone" className="block text-sm font-semibold">Mobile <span className="font-normal text-muted-foreground">(optional)</span></label>
                 <Input
+                  id="ebook-phone"
                   type="tel"
                   inputMode="tel"
+                  autoComplete="tel"
                   placeholder="01XXXXXXXXX"
-                  className="h-9"
+                  className="min-h-11"
                   value={phone}
                   onChange={(e) => { setPhone(e.target.value); setError(null); }}
                 />
-                {error && <p className="text-[11px] text-danger">{error}</p>}
+                {error && <p className="text-sm text-danger" role="alert">{error}</p>}
                 <Button
                   size="sm"
                   className="w-full rounded-full"
@@ -217,7 +241,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
                       setError('That does not look like an email address.');
                       return;
                     }
-                    if (!PHONE_RE.test(phone.replace(/[\s-]/g, ''))) {
+                    if (phone.trim() && !PHONE_RE.test(phone.replace(/[\s-]/g, ''))) {
                       setError('Enter a valid mobile number, e.g. 01712345678.');
                       return;
                     }
@@ -226,8 +250,8 @@ const JourneyOffers = ({ journeyId }: Props) => {
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" /> Get the PDF
                 </Button>
-                <p className="text-[10px] text-muted-foreground">
-                  Instant download — no email to wait for.
+                <p className="text-sm leading-5 text-muted-foreground">
+                  Instant download. We store your email to record the unlock; a phone number is not required.
                 </p>
               </div>
             )}

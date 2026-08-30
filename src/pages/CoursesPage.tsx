@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CardGridSkeleton } from '@/components/ui/skeletons';
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import LottieAnimation from "@/components/LottieAnimation";
+import LearningDashboardPreview from "@/components/LearningDashboardPreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,33 +132,34 @@ export default function CoursesPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div className="max-w-3xl">
-              <div className="text-sm font-bold text-accent uppercase tracking-wider mb-4">
-                Explore Our Catalog
+              <div className="mb-4 text-sm font-bold text-primary">
+                Choose an outcome, then see the full path
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 tracking-tight">
-                <span className="text-accent">Master New Skills</span>
+                <span className="text-primary">Build a practical skill</span>
                 <br />
                 <span className="text-foreground">with Professional Courses</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Unlock your potential with our expert-led courses designed to take you from beginner to professional in weeks.
+                Compare the outcome, level, time commitment, and full lesson plan before you decide. Start free courses immediately.
               </p>
 
-              <div className="relative max-w-xl group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  className="w-full h-14 pl-12 bg-secondary border-border text-foreground placeholder:text-muted-foreground rounded-full focus:bg-background transition-all text-lg"
-                  placeholder="Search for courses, webinars, or technologies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div className="max-w-xl">
+                <label htmlFor="course-search" className="mb-2 block text-sm font-semibold">Search the course library</label>
+                <div className="group relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden="true" />
+                  <Input
+                    id="course-search"
+                    className="h-14 w-full rounded-full border-border bg-secondary pl-12 text-lg text-foreground placeholder:text-muted-foreground focus:bg-background"
+                    placeholder="Try SQL, analytics, or Python"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
             <div className="hidden lg:flex justify-center">
-              <LottieAnimation
-                src="/animations/students-learning.json"
-                className="w-full max-w-md aspect-square"
-              />
+              <LearningDashboardPreview />
             </div>
           </div>
         </div>
@@ -254,10 +255,7 @@ export default function CoursesPage() {
                 {/* Webinar cards first */}
                 {filteredWebinars.map((webinar, index) => (
                   <ScrollReveal key={`w-${webinar.id}`} direction="up" delay={index * 0.05}>
-                    <div
-                      className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
-                      onClick={() => navigate(`/webinar/${webinar.id}`)}
-                    >
+                    <article className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group">
                       <div className="relative bg-series-webinar text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
 
                         {webinar.banner_url && (
@@ -319,17 +317,14 @@ export default function CoursesPage() {
                           Register Now
                         </Button>
                       </div>
-                    </div>
+                    </article>
                   </ScrollReveal>
                 ))}
 
                 {/* Course cards after */}
                 {filteredCourses.map((course, index) => (
                   <ScrollReveal key={course.id} direction="up" delay={(filteredWebinars.length + index) * 0.05}>
-                    <div
-                      className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
-                      onClick={() => navigate(`/course/${course.id}`)}
-                    >
+                    <article className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group">
                       <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
@@ -338,11 +333,9 @@ export default function CoursesPage() {
                           {course.title}
                         </h3>
 
-                        <div className="mt-4 z-10 bg-scrim/20 text-accent-foreground text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-accent-foreground/10 shadow-sm">
-                          REGISTRATION NOW
+                        <div className="mt-4 z-10 rounded-full border border-primary-foreground/20 bg-scrim/20 px-4 py-1.5 text-sm font-bold text-primary-foreground shadow-sm">
+                          View the learning plan
                         </div>
-
-                        <div className="mt-2 text-[9px] z-10 text-primary-foreground/70 uppercase tracking-widest font-medium">Limited seat available</div>
                       </div>
 
                       <div className="p-6 flex flex-col flex-grow gap-5">
@@ -350,7 +343,7 @@ export default function CoursesPage() {
                           <h4 className="font-bold text-lg text-foreground leading-snug flex items-center gap-2">
                              {course.title}
                              {course.is_free && (
-                               <span className="bg-danger text-danger-foreground text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
+                               <span className="flex h-6 shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 text-xs font-bold text-success-strong">
                                  FREE
                                </span>
                              )}
@@ -392,10 +385,6 @@ export default function CoursesPage() {
                           <div className="flex items-center gap-2 font-bold text-foreground">
                             {(course.is_free || (!course.price && !course.discounted_price)) ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success text-success-foreground text-xs font-bold tracking-wide shadow-sm">
-                                <span className="relative flex h-1.5 w-1.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-foreground"></span>
-                                </span>
                                 FREE
                               </span>
                             ) : course.discounted_price ? (
@@ -416,7 +405,7 @@ export default function CoursesPage() {
                           View Course Details
                         </Button>
                       </div>
-                    </div>
+                    </article>
                   </ScrollReveal>
                 ))}
               </div>

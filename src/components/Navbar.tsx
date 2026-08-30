@@ -48,11 +48,8 @@ const Navbar = () => {
               to="/career-prep" 
               className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-full border border-primary/20 transition-all hover:bg-primary/20 active:scale-95"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-              </span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Career Prep</span>
+              <span className="h-2 w-2 rounded-full bg-success-strong" aria-hidden="true" />
+              <span className="text-xs font-bold leading-none text-primary">Career Prep</span>
             </Link>
           </div>
 
@@ -76,10 +73,7 @@ const Navbar = () => {
                           : "text-foreground hover:text-primary"
                       }`}
                     >
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
-                      </span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-success-strong" aria-hidden="true" />
                       {item.name}
                     </Link>
                   )
@@ -125,7 +119,7 @@ const Navbar = () => {
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-3 xl:gap-4 shrink-0">
             <ThemeToggle />
-            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse [animation-duration:3s] hover:animate-none font-semibold rounded-xl shadow-pop transition-all duration-500" asChild>
+            <Button className="rounded-xl bg-primary font-semibold text-primary-foreground shadow-card transition-colors hover:bg-primary-hover" asChild>
               <Link to="/book-session">
                 Book Session
               </Link>
@@ -155,10 +149,7 @@ const Navbar = () => {
                     className="flex items-center gap-2 px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
-                    </span>
+                    <span className="h-2.5 w-2.5 rounded-full bg-success-strong" aria-hidden="true" />
                     {item.name}
                   </Link>
                 )

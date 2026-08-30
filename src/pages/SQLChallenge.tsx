@@ -53,7 +53,8 @@ import { getHintEscalationState } from './sql-challenge/modules/HintEscalation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuestionTopics } from '@/hooks/useTopics';
 import TopicCard from '@/components/careerprep/TopicCard';
-import { track, trackOnce } from '@/services/funnel';
+import { track, trackOnce, trackReturnVisit } from '@/services/funnel';
+import { recordSuccessfulReview } from '@/services/reviewSchedule';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -189,16 +190,36 @@ const SQLChallenge = () => {
       queryResult?.executionTime || 0,
     );
 
+    // Retention is measured from learning activity on a later date, not from
+    // opening the lobby or refreshing a route.
+    void trackReturnVisit();
+
     refreshSubmissions();
 
     void track({
-      event: isCorrect ? 'solved' : 'struggled',
+      event: 'learning_attempted',
       surface: 'workspace',
       subjectType: 'question',
       subjectId: currentQ.id,
-      metadata: { difficulty: currentQ.difficulty, industry: currentQ.industry },
+      metadata: { correct: isCorrect, difficulty: currentQ.difficulty, industry: currentQ.industry },
     });
+    if (!isCorrect) {
+      void track({ event: 'struggled', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id });
+    }
     if (isCorrect) {
+      const review = recordSuccessfulReview({
+        slug: currentQ.slug,
+        title: currentQ.title,
+        industry: currentQ.industry,
+        difficulty: currentQ.difficulty,
+      });
+      void track({
+        event: review.wasDue ? 'review_completed' : 'review_scheduled',
+        surface: 'workspace',
+        subjectType: 'question',
+        subjectId: currentQ.id,
+        metadata: { next_due_at: review.nextDueAt },
+      });
       // First success is the funnel's conversion moment — count it once.
       void trackOnce('solved', { event: 'solved', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id });
     }
