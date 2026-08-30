@@ -267,12 +267,12 @@ const SessionBookingManager = () => {
   // ── Helpers ────────────────────────────────────────────────
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      verified: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      confirmed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      pending: 'bg-warning-soft text-warning-foreground',
+      submitted: 'bg-accent/10 text-accent',
+      verified: 'bg-success-strong text-success-strong-foreground',
+      confirmed: 'bg-success-strong text-success-strong-foreground',
+      rejected: 'bg-danger-strong text-danger-strong-foreground',
+      cancelled: 'bg-danger-strong text-danger-strong-foreground',
       completed: 'bg-primary/10 text-primary',
     };
     return <Badge className={colors[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
@@ -286,7 +286,7 @@ const SessionBookingManager = () => {
   return (
     <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 relative z-10">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="session-types">Session Types</TabsTrigger>
           <TabsTrigger value="availability">Availability</TabsTrigger>
@@ -330,10 +330,10 @@ const SessionBookingManager = () => {
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Confirm" onClick={() => handleQuickStatusUpdate(b.id, 'confirmed', 'verified')}>
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Reject" onClick={() => handleQuickStatusUpdate(b.id, 'cancelled', 'rejected')}>
-                          <XCircle className="h-4 w-4 text-red-600" />
+                          <XCircle className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -389,7 +389,7 @@ const SessionBookingManager = () => {
                       {newType.is_paid ? (
                         <span className="text-primary font-medium">Paid Session</span>
                       ) : (
-                        <span className="text-green-600 dark:text-green-400 font-medium">Free Session</span>
+                        <span className="text-success font-medium">Free Session</span>
                       )}
                     </Label>
                   </div>
@@ -411,11 +411,11 @@ const SessionBookingManager = () => {
                     {st.is_paid ? (
                       <Badge className="bg-primary/10 text-primary text-xs">Paid — ৳{st.fee}</Badge>
                     ) : (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">Free</Badge>
+                      <Badge className="bg-success-strong text-success-strong-foreground text-xs">Free</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{st.description}</p>
-                  <p className="text-sm text-muted-foreground">{st.duration_minutes} min</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{st.description}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{st.duration_minutes} min</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -441,7 +441,7 @@ const SessionBookingManager = () => {
         {/* ═══════════════════════════════════════════════════════
             TAB 3 — Unavailable Slots
             ═══════════════════════════════════════════════════════ */}
-        <TabsContent value="unavailable-slots" className="space-y-6">
+        <TabsContent value="unavailable-slots" className="space-y-4">
           {/* Add new slot form */}
           <Card>
             <CardHeader>
@@ -526,7 +526,7 @@ const SessionBookingManager = () => {
             <CardContent>
               {unavailableSlots.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CalendarX className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <CalendarX className="mx-auto h-10 w-10 mb-4 opacity-50" />
                   <p>No unavailable slots configured</p>
                 </div>
               ) : (
@@ -595,7 +595,7 @@ const SessionBookingManager = () => {
               <CardHeader>
                 <CardTitle>Global Availability Rules</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <Label>Available Days of the Week</Label>
                   <div className="flex flex-wrap gap-2">
@@ -858,7 +858,7 @@ const SessionBookingManager = () => {
                     {editingType.is_paid ? (
                       <span className="text-primary">Paid Session</span>
                     ) : (
-                      <span className="text-green-600 dark:text-green-400">Free Session</span>
+                      <span className="text-success">Free Session</span>
                     )}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">

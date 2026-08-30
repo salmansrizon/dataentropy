@@ -345,7 +345,7 @@ export default function CourseDetails() {
                    <Skeleton className="h-4 w-48" />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
@@ -399,7 +399,7 @@ export default function CourseDetails() {
               <ChevronRight className="w-4 h-4 shrink-0" />
               <span className="text-foreground font-semibold">{course.title}</span>
               <div className="ml-auto w-full sm:w-auto mt-2 sm:mt-0 flex gap-2">
-                <Badge variant="secondary" className="bg-success-soft text-success border border-success/20 pointer-events-none capitalize">
+                <Badge variant="secondary" className="bg-success-soft text-success-strong border border-success/20 pointer-events-none capitalize">
                   {course.difficulty_level || 'beginner'}
                 </Badge>
               </div>
@@ -408,8 +408,8 @@ export default function CourseDetails() {
             {isFree && (
               <Badge className="mb-3 inline-flex items-center gap-2 bg-success hover:bg-success/90 text-success-foreground px-3 py-1 text-xs font-bold border-none shadow-sm w-fit">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-foreground"></span>
                 </span>
                 FREE
               </Badge>
@@ -421,7 +421,7 @@ export default function CourseDetails() {
 
             <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
               <div className="flex items-center gap-1.5 text-foreground font-bold bg-secondary px-2 py-0.5 rounded">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <Star className="w-4 h-4 text-warning fill-warning" />
                 <span>{course.rating || '4.8'}</span>
               </div>
               <span className="text-muted-foreground underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
@@ -450,7 +450,7 @@ export default function CourseDetails() {
                   )}
                 </h3>
                 {instructor?.linkedin_url && (
-                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#0077b5] hover:bg-[#0077b5] hover:text-white bg-[#0077b5]/10 px-3 py-1 rounded-full border border-[#0077b5]/20 transition-colors">
+                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-brand-linkedin hover:bg-brand-linkedin hover:text-brand-linkedin-foreground bg-brand-linkedin/10 px-3 py-1 rounded-full border border-brand-linkedin/20 transition-colors">
                     <Linkedin className="w-4 h-4" />
                     <span>VIEW PROFILE</span>
                   </a>
@@ -599,7 +599,7 @@ export default function CourseDetails() {
                                         if (isFree ? freeUnlocked : item.is_free) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
-                                             <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-black">
+                                             <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-scrim">
                                                <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
                                                   {isPlaying ? (
                                                     <>
@@ -611,8 +611,8 @@ export default function CourseDetails() {
                                                         title={item.title}
                                                       />
                                                       {/* Mask YouTube chrome (top title bar & bottom watch-on-yt) */}
-                                                      <div className="absolute top-0 left-0 right-0 h-14 bg-black pointer-events-none z-10" />
-                                                      <div className="absolute bottom-0 right-0 h-12 w-40 bg-black pointer-events-none z-10" />
+                                                      <div className="absolute top-0 left-0 right-0 h-14 bg-scrim pointer-events-none z-10" />
+                                                      <div className="absolute bottom-0 right-0 h-12 w-40 bg-scrim pointer-events-none z-10" />
                                                     </>
                                                   ) : (
                                                     <button
@@ -626,10 +626,10 @@ export default function CourseDetails() {
                                                         alt={item.title}
                                                         className="absolute inset-0 w-full h-full object-cover"
                                                       />
-                                                      <div className="absolute inset-0 bg-black/30 group-hover/play:bg-black/40 transition-colors" />
+                                                      <div className="absolute inset-0 bg-scrim/30 group-hover/play:bg-scrim/40 transition-colors" />
                                                       <div className="absolute inset-0 flex items-center justify-center">
-                                                        <div className="w-16 h-16 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-white/20 group-hover/play:scale-110 transition-transform">
-                                                          <Play className="w-7 h-7 text-white fill-current ml-1" />
+                                                        <div className="w-16 h-16 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-accent-foreground/20 group-hover/play:scale-110 transition-transform">
+                                                          <Play className="w-7 h-7 text-accent-foreground fill-current ml-1" />
                                                         </div>
                                                       </div>
                                                     </button>
@@ -696,7 +696,7 @@ export default function CourseDetails() {
 
           <div className="w-full lg:w-[35%] relative">
             <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-card sticky top-28">
-              <div className="relative aspect-video bg-slate-900 group">
+              <div className="relative aspect-video bg-foreground group">
                 {playingVideo && course.video_url ? (
                   <div className="w-full h-full relative">
                     {course.video_url.includes('youtube.com') || course.video_url.includes('youtu.be') ? (
@@ -719,9 +719,9 @@ export default function CourseDetails() {
                 ) : course.banner_image ? (
                   <div className="w-full h-full relative cursor-pointer" onClick={() => course.video_url ? setPlayingVideo(true) : setShowEnrollmentModal(true)}>
                     <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 group-hover:scale-110 transition-all">
-                        <Play className="h-8 w-8 text-white fill-current translate-x-0.5" />
+                    <div className="absolute inset-0 bg-scrim/40 group-hover:bg-scrim/20 transition-all flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-accent-foreground/20 backdrop-blur-xl flex items-center justify-center border border-accent-foreground/30 group-hover:scale-110 transition-all">
+                        <Play className="h-8 w-8 text-accent-foreground fill-current translate-x-0.5" />
                       </div>
                     </div>
                   </div>
@@ -776,7 +776,7 @@ export default function CourseDetails() {
              {relatedCourses.length > 0 && (
                <div className="mt-10 space-y-5">
                  <h3 className="text-xl md:text-2xl font-black text-foreground/90 px-1 flex items-center gap-2">
-                   <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                   <Zap className="w-5 h-5 text-warning fill-warning" />
                    You can also find useful
                  </h3>
                  <div className="flex flex-col gap-4">

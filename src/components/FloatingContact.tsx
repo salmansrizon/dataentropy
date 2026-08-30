@@ -25,16 +25,16 @@ const FloatingContact = () => {
         {
             name: 'WhatsApp',
             icon: <MessageCircle className="w-5 h-5" />,
-            color: 'bg-[#25D366]',
-            hoverColor: 'hover:bg-[#128C7E]',
+            color: 'bg-brand-whatsapp',
+            hoverColor: 'hover:bg-brand-whatsapp-hover',
             link: "https://wa.me/8801682359817?text=Hello%20Salman,%20I'm%20interested%20in%20your%20services.",
             delay: 0.1
         },
         {
             name: 'Telegram',
             icon: <Send className="w-5 h-5" />,
-            color: 'bg-[#0088cc]',
-            hoverColor: 'hover:bg-[#0077b5]',
+            color: 'bg-brand-telegram',
+            hoverColor: 'hover:bg-brand-telegram-hover',
             link: "https://t.me/+8801682359817",
             delay: 0
         }
@@ -70,12 +70,12 @@ const FloatingContact = () => {
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             className={cn(
-                                                "flex items-center gap-3 px-5 py-3 rounded-2xl text-white shadow-xl min-w-[160px] font-bold text-sm backdrop-blur-md transition-all border border-white/10",
+                                                "flex items-center gap-3 px-5 py-3 rounded-2xl text-accent-foreground shadow-xl min-w-[160px] font-bold text-sm backdrop-blur-md transition-all border border-accent-foreground/10",
                                                 opt.color,
                                                 opt.hoverColor
                                             )}
                                         >
-                                            <div className="bg-white/20 p-1.5 rounded-lg">
+                                            <div className="bg-accent-foreground/20 p-1.5 rounded-lg">
                                                 {opt.icon}
                                             </div>
                                             {opt.name}
@@ -92,8 +92,8 @@ const FloatingContact = () => {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setIsOpen(!isOpen)}
                             className={cn(
-                                "w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-2xl relative group overflow-hidden transition-all duration-500",
-                                isOpen ? "bg-red-500 rotate-90" : "bg-primary"
+                                "w-16 h-16 rounded-3xl flex items-center justify-center text-primary-foreground shadow-2xl relative group overflow-hidden transition-all duration-500",
+                                isOpen ? "bg-destructive rotate-90" : "bg-primary"
                             )}
                         >
                             {/* Animated Background Pulse */}
@@ -123,7 +123,7 @@ const FloatingContact = () => {
                                     >
                                         <MessageSquare className="w-7 h-7" />
                                         {/* Notification badge */}
-                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-primary rounded-full" />
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive border-2 border-primary rounded-full" />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

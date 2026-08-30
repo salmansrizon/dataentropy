@@ -27,14 +27,14 @@ const AccordionNode = ({ node, depth = 0 }: { node: RoadmapNode; depth?: number 
       }`}>
         <div className="flex items-start gap-2 flex-1 min-w-0">
           <div className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full shrink-0 mt-1.5 ${
-            depth === 0 ? 'bg-primary' : depth === 1 ? 'bg-blue-500' : 'bg-emerald-500'
+            depth === 0 ? 'bg-primary' : depth === 1 ? 'bg-series-web' : 'bg-series-data'
           }`} />
           <span className="break-words min-w-0"><InlineMarkdown>{node.title}</InlineMarkdown></span>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pl-4 sm:pl-6">
         {contentMd && (
-          <div className="mb-2 px-2 sm:px-3 py-2 rounded-md bg-white dark:bg-card border border-border">
+          <div className="mb-2 px-2 sm:px-3 py-2 rounded-md bg-card border border-border">
             <BlockMarkdown className="text-xs sm:text-sm text-muted-foreground">{contentMd}</BlockMarkdown>
           </div>
         )}

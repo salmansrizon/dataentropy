@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
+/**
+ * Enforces ADR-0002: all color in src/ resolves to a semantic design token.
+ *
+ * See docs/adr/0002-all-color-comes-from-semantic-tokens.md. This repo has run
+ * the "tokens by convention" experiment once already — the M0–M8 rollout swept
+ * these same colors onto tokens and 391 raw usages had accumulated again by the
+ * time ADR-0002 was written. Hence a guard rather than a habit.
+ */
+
+const srcDir = path.resolve(__dirname, '..');
+
+const PALETTE = [
+  'slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'amber', 'yellow',
+  'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet',
+  'purple', 'fuchsia', 'pink', 'rose',
+].join('|');
+
+const UTILITY = 'bg|text|border|from|to|via|ring|fill|stroke|decoration|outline|shadow|accent|caret|divide|placeholder';
+
+const RAW_PALETTE_CLASS = new RegExp(
+  `\\b(?:${UTILITY})-(?:${PALETTE})-\\d{2,3}\\b`,
+  'g',
+);
+
+/**
+ * `white` and `black` take no numeric step, so they slip past the palette
+ * pattern — and they are the worst offenders for dark mode, since neither
+ * flips. `bg-white` on a themed surface is a bug, not a shortcut.
+ */
+const RAW_ABSOLUTE_CLASS = new RegExp(`\\b(?:${UTILITY})-(?:white|black)\\b`, 'g');
+
+const HEX_LITERAL = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
+
+/**
+ * Files still carrying raw colors, each waiting on the sweep ticket that owns
+ * its surface. This list only ever shrinks — each sweep deletes its own entries,
+ * and it should be empty when the theme-token map (#82) closes.
+ */
+const NOT_YET_SWEPT: string[] = [
+];
+
+/**
+ * Permanent exemptions, each for a reason no token can solve:
+ *
+ * - `chart.tsx` — the hex is a CSS attribute *selector* matching what Recharts
+ *   writes into its own markup (`[stroke='#ccc']`); the color is being targeted
+ *   for override, not chosen.
+ * - `monacoTheme.ts` — Monaco's `defineTheme` reads a JS object, not CSS, so a
+ *   `hsl(var(--x))` reference cannot reach it. Isolated to that one module so
+ *   the exemption stays narrow.
+ */
+const NOT_A_COLOR_CHOICE = ['components/ui/chart.tsx', 'design-system/monacoTheme.ts'];
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((entry) => /\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry))
+    .map((entry) => path.join(dir, entry));
+}
+
+interface Violation {
+  file: string;
+  line: number;
+  match: string;
+}
+
+function violationsIn(file: string): Violation[] {
+  const relative = path.relative(srcDir, file);
+  const found: Violation[] = [];
+
+  readFileSync(file, 'utf8').split('\n').forEach((text, index) => {
+    for (const pattern of [RAW_PALETTE_CLASS, RAW_ABSOLUTE_CLASS, HEX_LITERAL]) {
+      for (const [match] of text.matchAll(pattern)) {
+        found.push({ file: relative, line: index + 1, match });
+      }
+    }
+  });
+
+  return found;
+}
+
+const allViolations = sourceFiles(srcDir)
+  .flatMap(violationsIn)
+  .filter((v) => !NOT_A_COLOR_CHOICE.includes(v.file));
+
+function report(violations: Violation[]): string {
+  const shown = violations.slice(0, 20);
+  const lines = shown.map((v) => `  ${v.file}:${v.line}  ${v.match}`);
+  if (violations.length > shown.length) {
+    lines.push(`  …and ${violations.length - shown.length} more`);
+  }
+  return `\n${lines.join('\n')}\n\nUse a semantic token instead (see docs/adr/0002). If the color has no token, add a named one to src/index.css.`;
+}
+
+describe('ADR-0002: no raw colors outside the token layer', () => {
+  it('has no raw palette classes or hex literals in unswept files', () => {
+    const offenders = allViolations.filter((v) => !NOT_YET_SWEPT.includes(v.file));
+
+    expect(offenders.length, report(offenders)).toBe(0);
+  });
+
+  it('keeps the allowlist honest — every entry still has a violation to excuse', () => {
+    const dirty = new Set(allViolations.map((v) => v.file));
+    const stale = NOT_YET_SWEPT.filter((file) => !dirty.has(file));
+
+    expect(stale, `allowlisted files that are already clean — delete them: ${stale.join(', ')}`)
+      .toEqual([]);
+  });
+});

@@ -97,7 +97,7 @@ const Index = () => {
                 <Link key={title} to={href} className="group rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4">
                   <Card className="h-full border-border/70 transition duration-200 group-hover:-translate-y-1 group-hover:shadow-hover">
                     <CardContent className="flex h-full flex-col p-6 sm:p-8">
-                      <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl text-white ${accent}`}><Icon className="h-6 w-6" aria-hidden="true" /></div>
+                      <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl text-primary-foreground ${accent}`}><Icon className="h-6 w-6" aria-hidden="true" /></div>
                       <h3 className="text-2xl font-bold">{title}</h3>
                       <p className="mt-3 flex-1 leading-7 text-muted-foreground">{description}</p>
                       <span className="mt-7 inline-flex min-h-11 items-center font-bold text-accent">{cta} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>

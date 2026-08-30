@@ -42,7 +42,9 @@ export default {
 				success: {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))',
-					soft: 'hsl(var(--success-soft))'
+					soft: 'hsl(var(--success-soft))',
+					strong: 'hsl(var(--success-strong))',
+					'strong-foreground': 'hsl(var(--success-strong-foreground))'
 				},
 				warning: {
 					DEFAULT: 'hsl(var(--warning))',
@@ -52,7 +54,39 @@ export default {
 				danger: {
 					DEFAULT: 'hsl(var(--danger))',
 					foreground: 'hsl(var(--danger-foreground))',
-					soft: 'hsl(var(--danger-soft))'
+					soft: 'hsl(var(--danger-soft))',
+					strong: 'hsl(var(--danger-strong))',
+					'strong-foreground': 'hsl(var(--danger-strong-foreground))'
+				},
+				scan: 'hsl(var(--surface-scan))',
+				scrim: 'hsl(var(--scrim))',
+				brand: {
+					bkash: {
+						DEFAULT: 'hsl(var(--brand-bkash))',
+						foreground: 'hsl(var(--brand-bkash-foreground))',
+						soft: 'hsl(var(--brand-bkash-soft))',
+						'soft-foreground': 'hsl(var(--brand-bkash-soft-foreground))'
+					},
+					nagad: {
+						DEFAULT: 'hsl(var(--brand-nagad))',
+						foreground: 'hsl(var(--brand-nagad-foreground))',
+						soft: 'hsl(var(--brand-nagad-soft))',
+						'soft-foreground': 'hsl(var(--brand-nagad-soft-foreground))'
+					},
+					whatsapp: {
+						DEFAULT: 'hsl(var(--brand-whatsapp))',
+						hover: 'hsl(var(--brand-whatsapp-hover))',
+						foreground: 'hsl(var(--brand-whatsapp-foreground))'
+					},
+					telegram: {
+						DEFAULT: 'hsl(var(--brand-telegram))',
+						hover: 'hsl(var(--brand-telegram-hover))',
+						foreground: 'hsl(var(--brand-telegram-foreground))'
+					},
+					linkedin: {
+						DEFAULT: 'hsl(var(--brand-linkedin))',
+						foreground: 'hsl(var(--brand-linkedin-foreground))'
+					}
 				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
@@ -100,9 +134,6 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			backgroundImage: {
-				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)',
-				'gradient-brand': 'var(--gradient-brand)'
 			},
 			boxShadow: {
 				'card': 'var(--shadow-card)',
