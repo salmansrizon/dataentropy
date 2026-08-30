@@ -23,7 +23,8 @@ import {
   RotateCcw,
   XCircle,
   Info,
-  History
+  History,
+  Lightbulb
 } from 'lucide-react';
 import {
   Dialog,
@@ -53,8 +54,10 @@ import { getHintEscalationState } from './sql-challenge/modules/HintEscalation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuestionTopics } from '@/hooks/useTopics';
 import TopicCard from '@/components/careerprep/TopicCard';
-import { track, trackOnce, trackReturnVisit } from '@/services/funnel';
-import { recordSuccessfulReview } from '@/services/reviewSchedule';
+import { track, trackOnce } from '@/services/funnel';
+import { recordReviewResult } from '@/services/reviewSchedule';
+import { recordLearningActivity } from '@/services/learningActivity';
+import { explainFailedAttempt, type LearningFeedback } from '@/domain/learningFeedback';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -101,6 +104,7 @@ const SQLChallenge = () => {
   const [stepResults, setStepResults] = useState<Record<number, boolean>>({});
   const [showFailedDialog, setShowFailedDialog] = useState(false);
   const [failCount, setFailCount] = useState<Record<number, number>>({});
+  const [lastFeedback, setLastFeedback] = useState<LearningFeedback | null>(null);
 
   // Mission queue building and timer initialization are owned by
   // useMissionRunner/useTimerController's own effects (watching question/children
@@ -177,6 +181,13 @@ const SQLChallenge = () => {
     const pg = getPGliteInstance();
     const isMultiStep = missionQueue.length > 1;
     const isCorrect = await validateSubmission(pg, code, currentQ, mcqAnswer);
+    let expectedRows: number | undefined;
+    let actualRows: number | undefined;
+    let executionError: string | undefined;
+    if (pg && currentQ.question_type !== 'mcq' && currentQ.solution_sql) {
+      try { expectedRows = (await pg.query(currentQ.solution_sql)).rows.length; } catch { expectedRows = undefined; }
+      try { actualRows = (await pg.query(code)).rows.length; } catch (error) { executionError = error instanceof Error ? error.message : 'The query could not run.'; }
+    }
 
     const currentIdx = cursorIdx;
 
@@ -190,38 +201,41 @@ const SQLChallenge = () => {
       queryResult?.executionTime || 0,
     );
 
-    // Retention is measured from learning activity on a later date, not from
-    // opening the lobby or refreshing a route.
-    void trackReturnVisit();
-
     refreshSubmissions();
 
     void track({
-      event: 'learning_attempted',
+      event: 'attempt_submitted',
       surface: 'workspace',
       subjectType: 'question',
       subjectId: currentQ.id,
-      metadata: { correct: isCorrect, difficulty: currentQ.difficulty, industry: currentQ.industry },
+      metadata: { correct: isCorrect, difficulty: currentQ.difficulty, industry: currentQ.industry, hint_level: failCount[currentIdx] ?? 0 },
     });
+    void recordLearningActivity({ type: 'attempt', subjectId: currentQ.id, successful: isCorrect, durationSeconds: getTimeTaken(), metadata: { hint_level: failCount[currentIdx] ?? 0, difficulty: currentQ.difficulty } });
     if (!isCorrect) {
       void track({ event: 'struggled', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id });
     }
-    if (isCorrect) {
-      const review = recordSuccessfulReview({
+    const review = await recordReviewResult({
+        questionId: currentQ.id,
         slug: currentQ.slug,
         title: currentQ.title,
-        industry: currentQ.industry,
-        difficulty: currentQ.difficulty,
-      });
-      void track({
-        event: review.wasDue ? 'review_completed' : 'review_scheduled',
-        surface: 'workspace',
-        subjectType: 'question',
-        subjectId: currentQ.id,
-        metadata: { next_due_at: review.nextDueAt },
-      });
+        industry: currentQ.industry ?? 'Data skills',
+        difficulty: currentQ.difficulty ?? 'Mixed',
+      }, isCorrect ? 'correct' : 'incorrect');
+    if (isCorrect) {
+      if (review.scheduled) void track({
+          event: review.wasDue ? 'review_completed' : 'review_scheduled',
+          surface: 'workspace',
+          subjectType: 'question',
+          subjectId: currentQ.id,
+          metadata: { next_due_at: review.nextDueAt },
+        });
       // First success is the funnel's conversion moment — count it once.
       void trackOnce('solved', { event: 'solved', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id });
+      void track({ event: 'learning_item_completed', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id, metadata: { next_due_at: review.nextDueAt } });
+      if (review.wasDue) void recordLearningActivity({ type: 'review', subjectId: currentQ.id, successful: true });
+      setLastFeedback(null);
+    } else {
+      setLastFeedback(explainFailedAttempt({ sql: code, actualRows, expectedRows, errorMessage: executionError }));
     }
 
     if (isCorrect) {
@@ -585,6 +599,15 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
             </DialogDescription>
           </DialogHeader>
 
+          {lastFeedback && (
+            <div className="rounded-xl border border-warning/25 bg-warning-soft p-4" role="status" aria-live="polite">
+              <p className="text-sm font-extrabold text-warning-foreground">{lastFeedback.title}</p>
+              {lastFeedback.difference && <p className="mt-1 text-sm text-foreground">{lastFeedback.difference}</p>}
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Next clue: {lastFeedback.clue}</p>
+              {topics[0] && <Button variant="link" className="mt-1 h-auto min-h-11 px-0" onClick={() => navigate(`/career-prep/topic/${topics[0].slug}`)}>Review the exact Topic section</Button>}
+            </div>
+          )}
+
           {/* Progressive Hints */}
           {(() => {
             const fails = failCount[cursorIdx] || 0;
@@ -647,7 +670,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
               default:
                 return (
                   <p className="text-center text-[10px] text-muted-foreground font-medium">
-                    💡 Hint unlocks after 1 more failed attempt
+                    <Lightbulb className="mr-1 inline h-3.5 w-3.5 text-warning" /> Hint unlocks after 1 more failed attempt
                   </p>
                 );
             }

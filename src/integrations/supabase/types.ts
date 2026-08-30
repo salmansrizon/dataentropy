@@ -651,6 +651,7 @@ export type Database = {
           transaction_id: string | null
           updated_at: string
           user_email: string
+          user_id: string | null
           user_name: string
           whatsapp_number: string | null
         }
@@ -669,6 +670,7 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
           user_email: string
+          user_id?: string | null
           user_name: string
           whatsapp_number?: string | null
         }
@@ -687,6 +689,7 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
           user_email?: string
+          user_id?: string | null
           user_name?: string
           whatsapp_number?: string | null
         }
@@ -791,6 +794,10 @@ export type Database = {
           category_id: string | null
           course_includes: string[] | null
           course_type: string | null
+          access_terms: string | null
+          refund_policy: string | null
+          payment_verification_time: string | null
+          support_contact: string | null
           created_at: string
           description: string
           difficulty_level: string | null
@@ -822,6 +829,10 @@ export type Database = {
           category_id?: string | null
           course_includes?: string[] | null
           course_type?: string | null
+          access_terms?: string | null
+          refund_policy?: string | null
+          payment_verification_time?: string | null
+          support_contact?: string | null
           created_at?: string
           description: string
           difficulty_level?: string | null
@@ -853,6 +864,10 @@ export type Database = {
           category_id?: string | null
           course_includes?: string[] | null
           course_type?: string | null
+          access_terms?: string | null
+          refund_policy?: string | null
+          payment_verification_time?: string | null
+          support_contact?: string | null
           created_at?: string
           description?: string
           difficulty_level?: string | null

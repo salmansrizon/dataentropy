@@ -58,7 +58,8 @@ const CareerPrepLibrary = () => {
   const isMobile = useIsMobile();
 
   const [type, setType] = useState<QuestionTypeFilter>('All');
-  const [difficulty, setDifficulty] = useState<DifficultyFilter>('All');
+  const requestedDifficulty = params.get('difficulty');
+  const [difficulty, setDifficulty] = useState<DifficultyFilter>(DIFFICULTIES.includes(requestedDifficulty as DifficultyFilter) ? requestedDifficulty as DifficultyFilter : 'All');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -159,7 +160,9 @@ const CareerPrepLibrary = () => {
 
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <label htmlFor="question-search" className="sr-only">Search practice questions</label>
             <Input
+              id="question-search"
               placeholder="Search questions…"
               className="border-border/50 bg-background/50 pl-9"
               value={search}

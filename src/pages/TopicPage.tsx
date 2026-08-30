@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, HelpCircle, Loader2, Code2, ListChecks, Map, PlayCircle, BookDown, Video, Briefcase, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,9 @@ import { track } from '@/services/funnel';
 import { CourseCountdown } from '@/components/CourseCountdown';
 import { TopicSkeleton } from '@/components/ui/skeletons';
 import TopicSections from '@/components/careerprep/TopicSections';
+import LearningLoop from '@/components/careerprep/LearningLoop';
+import TopicQueries from '@/components/careerprep/TopicQueries';
+import { recordLearningActivity } from '@/services/learningActivity';
 
 // The Topic page: explanation, practice, checkpoint — the interactive medium
 // Career Prep is for. A Roadmap covers the same subject matter as a written
@@ -35,6 +38,15 @@ const TopicPage = () => {
   });
   const [open, setOpen] = useState(false);
   const [recallOpen, setRecallOpen] = useState(false);
+  const trackedTopicId = data?.topic?.id;
+  const trackedTopicSlug = data?.topic?.slug;
+  const trackedTopicPassed = trackedTopicId ? passed.has(trackedTopicId) : false;
+
+  useEffect(() => {
+    if (!trackedTopicId) return;
+    void track({ event: 'learning_item_started', surface: 'topic', subjectType: 'topic', subjectId: trackedTopicId });
+    void recordLearningActivity({ type: 'topic', subjectId: trackedTopicId, successful: trackedTopicPassed, metadata: { slug: trackedTopicSlug } });
+  }, [trackedTopicId, trackedTopicPassed, trackedTopicSlug]);
 
   if (loading) {
     return (
@@ -99,6 +111,7 @@ const TopicPage = () => {
         </div>
 
         <TopicSections sections={sections} />
+        <LearningLoop sections={sections} topicTitle={topic.title} />
 
         <section className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5" aria-labelledby="recall-heading">
           <p className="text-sm font-bold text-primary">Retrieve before you practise</p>
@@ -110,7 +123,7 @@ const TopicPage = () => {
           {recallOpen && <div id="recall-check" className="mt-4 rounded-xl bg-card p-4 text-sm leading-6"><strong>A useful answer should connect the idea to this outcome:</strong> {topic.why_it_matters}</div>}
         </section>
 
-        <section className="mt-6">
+        <section id="independent-practice" className="mt-6 scroll-mt-24">
           <h2 className="mb-1 text-lg font-bold">Try it independently</h2>
           <p className="mb-3 text-sm text-muted-foreground">Attempt before reopening the explanation. Feedback will point to the next useful step.</p>
           {practice.length === 0 ? (
@@ -189,6 +202,8 @@ const TopicPage = () => {
             </div>
           )}
         </section>
+        <TopicQueries topicId={topic.id} />
+
         {references.length > 0 && (
           <section className="mt-6">
             <h2 className="mb-1 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">

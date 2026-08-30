@@ -28,14 +28,15 @@ const TopicSectionsEditor = ({ topicId }: { topicId: string }) => {
   const [title, setTitle] = React.useState('');
   const [body, setBody] = React.useState('');
   const [takeaway, setTakeaway] = React.useState('');
+  const [sectionType, setSectionType] = React.useState('mental_model');
 
   const { data: sections = [] } = useQuery({
     queryKey: ['admin-topic-sections', topicId],
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from('topic_sections').select('id, title, body, takeaway, order_index')
+        .from('topic_sections').select('id, title, body, takeaway, order_index, section_type')
         .eq('topic_id', topicId).order('order_index');
-      return (data ?? []) as { id: string; title: string; body: string; takeaway: string | null; order_index: number }[];
+      return (data ?? []) as { id: string; title: string; body: string; takeaway: string | null; order_index: number; section_type: string }[];
     },
   });
 
@@ -50,6 +51,7 @@ const TopicSectionsEditor = ({ topicId }: { topicId: string }) => {
       title: title.trim(),
       body: body.trim(),
       takeaway: takeaway.trim() || null,
+      section_type: sectionType,
       order_index: nextOrder,
     });
     if (error) return fail(error);
@@ -73,6 +75,7 @@ const TopicSectionsEditor = ({ topicId }: { topicId: string }) => {
           <span className="mt-0.5 text-xs font-bold text-muted-foreground">{s.order_index}</span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{s.title}</p>
+            <Badge variant="outline" className="my-1 text-[10px]">{s.section_type.replaceAll('_', ' ')}</Badge>
             <p className="line-clamp-2 text-xs text-muted-foreground">{s.body}</p>
           </div>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(s.id)}>
@@ -82,11 +85,18 @@ const TopicSectionsEditor = ({ topicId }: { topicId: string }) => {
       ))}
 
       <div className="space-y-2 rounded-lg border border-dashed p-3">
-        <Input placeholder="Section title" value={title} onChange={(e) => setTitle(e.target.value)} className="h-8" />
+        <label htmlFor={`section-type-${topicId}`} className="text-xs font-bold">Learning-loop role</label>
+        <select id={`section-type-${topicId}`} value={sectionType} onChange={(event) => setSectionType(event.target.value)} className="min-h-11 w-full rounded-md border bg-background px-3 text-sm">
+          {['outcome','mental_model','worked_example','faded_example','independent_attempt','feedback','later_review'].map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
+        </select>
+        <label htmlFor={`section-title-${topicId}`} className="text-xs font-bold">Section title</label>
+        <Input id={`section-title-${topicId}`} placeholder="e.g. Trace one JOIN by hand" value={title} onChange={(e) => setTitle(e.target.value)} className="min-h-11" />
+        <label htmlFor={`section-body-${topicId}`} className="text-xs font-bold">Teaching content</label>
         <Textarea placeholder="Body — the mechanism, the decision, or the failure mode" value={body}
-          onChange={(e) => setBody(e.target.value)} rows={3} />
-        <Input placeholder="One-line takeaway (optional)" value={takeaway}
-          onChange={(e) => setTakeaway(e.target.value)} className="h-8" />
+          id={`section-body-${topicId}`} onChange={(e) => setBody(e.target.value)} rows={3} />
+        <label htmlFor={`section-takeaway-${topicId}`} className="text-xs font-bold">Takeaway <span className="font-normal text-muted-foreground">(optional)</span></label>
+        <Input id={`section-takeaway-${topicId}`} placeholder="One-line takeaway" value={takeaway}
+          onChange={(e) => setTakeaway(e.target.value)} className="min-h-11" />
         <Button size="sm" className="rounded-full" onClick={add} disabled={!title.trim() || !body.trim()}>
           <Plus className="mr-1 h-3.5 w-3.5" /> Add card
         </Button>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle2, XCircle, Search, Trash2 } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Trash2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +163,7 @@ export default function CourseEnrollmentManager() {
                     <TableCell>
                       <Badge variant={
                         enr.status === 'confirmed' || enr.status === 'approved' ? 'default' : 
-                        enr.status === 'rejected' ? 'destructive' : 'secondary'
+                        enr.status === 'rejected' || enr.status === 'refunded' ? 'destructive' : 'secondary'
                       }>
                         {enr.status || 'pending'}
                       </Badge>
@@ -172,15 +172,16 @@ export default function CourseEnrollmentManager() {
                       <div className="flex justify-end gap-2">
                         {(!enr.status || enr.status === 'pending' || enr.status === 'active') && (
                           <>
-                            <Button size="icon" variant="outline" className="h-8 w-8 text-success-strong border-success/40 hover:bg-success-soft" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve">
+                            <Button size="icon" variant="outline" className="h-11 w-11 text-success-strong border-success/40 hover:bg-success-soft" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve" aria-label="Verify enrollment payment">
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="outline" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-danger-soft" onClick={() => handleUpdateStatus(enr.id, 'rejected')} title="Reject">
+                            <Button size="icon" variant="outline" className="h-11 w-11 text-destructive border-destructive/30 hover:bg-danger-soft" onClick={() => handleUpdateStatus(enr.id, 'rejected')} title="Reject" aria-label="Reject enrollment">
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </>
                         )}
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10" onClick={() => handleDelete(enr.id)} title="Delete">
+                        {(enr.status === 'confirmed' || enr.status === 'approved') && <Button size="icon" variant="outline" className="h-11 w-11 text-warning border-warning/40 hover:bg-warning-soft" onClick={() => handleUpdateStatus(enr.id, 'refunded')} title="Mark refunded" aria-label="Mark enrollment payment refunded"><RotateCcw className="h-4 w-4" /></Button>}
+                        <Button size="icon" variant="ghost" className="h-11 w-11 text-destructive hover:text-destructive/90 hover:bg-destructive/10" onClick={() => handleDelete(enr.id)} title="Delete" aria-label="Delete enrollment">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

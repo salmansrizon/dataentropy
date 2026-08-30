@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
-  Zap, Trophy, ChevronRight, Play, RotateCcw, CalendarDays, Library,
+  Zap, Trophy, ChevronRight, Play, RotateCcw, CalendarDays, Library, ChevronDown, Clock3,
 } from 'lucide-react';
 import { useXPStats } from '@/hooks/useCareerPrep';
 import {
@@ -19,7 +19,13 @@ import JourneyOffers from './JourneyOffers';
 import { JourneyPanelSkeleton } from '@/components/ui/skeletons';
 import JourneyTimeline from './JourneyTimeline';
 import ClaimProfileCard from './ClaimProfileCard';
-import { getDueReviews } from '@/services/reviewSchedule';
+import { useDueReviews, usePostponeReview } from '@/hooks/useReviewSchedule';
+import LearnerRhythmCard from './LearnerRhythmCard';
+import { CURRENT_LEVELS, TARGET_ROLES, WEEKLY_TIME, recommendLearningPlan, type CurrentLevel, type LearningPreferences, type TargetRole, type WeeklyTime } from '@/domain/learningPlan';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { track } from '@/services/funnel';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 // Variant A — "Journey First". The plan leads the page, and the Library sits on
 // its own route behind a card, so a learner picks structure or practice.
@@ -46,7 +52,9 @@ interface Props {
 
 const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const [searchParams] = useSearchParams();
+  const { session } = useAuth();
   const { journeys, loading: journeysLoading } = useJourneys();
   const { enrolment } = useActiveEnrolment();
   const { plan } = useJourneyPlan(enrolment?.journey_id);
@@ -61,7 +69,9 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const { daily: journeyDaily } = useJourneyDailyChallenge(enrolment?.journey_id);
   const poolSlugs = new Set(pool.map((q) => q.slug));
   const { items: nextUp } = useNextUp(3, enrolment ? poolSlugs : undefined);
-  const dueReviews = getDueReviews().filter((review) => !enrolment || poolSlugs.has(review.slug)).slice(0, 3);
+  const { reviews } = useDueReviews();
+  const postpone = usePostponeReview();
+  const dueReviews = reviews.filter((review) => !enrolment || poolSlugs.has(review.slug)).slice(0, 3);
 
   // The global deck still serves anyone who has not chosen a plan yet.
   const daily = enrolment
@@ -77,21 +87,41 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const planPct = planTopics.length ? Math.round((doneCount / planTopics.length) * 100) : 0;
 
   const journey = journeys.find((j) => j.id === enrolment?.journey_id);
-  const preferredRole = searchParams.get('role');
-  const roleKeywords = preferredRole === 'AI engineer'
-    ? ['ai engineer', 'ai engineering']
-    : preferredRole === 'Data engineer'
-      ? ['data engineer', 'data engineering']
-      : preferredRole === 'Data analyst'
-        ? ['data analyst', 'data analytics']
-        : [];
-  const recommendedJourney = roleKeywords.length
-    ? journeys.find((candidate) => roleKeywords.some((keyword) => candidate.title.toLowerCase().includes(keyword)))
-    : undefined;
+  const roleParam = searchParams.get('role');
+  const levelParam = searchParams.get('level');
+  const timeParam = searchParams.get('time');
+  const preferredRole = TARGET_ROLES.includes(roleParam as TargetRole) ? roleParam as TargetRole : null;
+  const preferredLevel = CURRENT_LEVELS.includes(levelParam as CurrentLevel) ? levelParam as CurrentLevel : null;
+  const preferredTime = WEEKLY_TIME.includes(timeParam as WeeklyTime) ? timeParam as WeeklyTime : null;
+  const preferences: LearningPreferences | null = preferredRole && preferredLevel && preferredTime
+    ? { role: preferredRole, level: preferredLevel, time: preferredTime }
+    : null;
+  const recommendation = useMemo(() => preferences ? recommendLearningPlan(preferences, journeys) : null, [preferences, journeys]);
+  const recommendedJourney = recommendation?.journey ?? undefined;
+  const { pool: recommendedPool } = useJourneyQuestionPool(recommendedJourney?.id);
   const orderedJourneys = recommendedJourney
     ? [recommendedJourney, ...journeys.filter((candidate) => candidate.id !== recommendedJourney.id)]
     : journeys;
   const [showSwitcher, setShowSwitcher] = useState(false);
+  const [showPlan, setShowPlan] = useState(false);
+
+  useEffect(() => {
+    if (!preferences || !session?.user?.id || !recommendation) return;
+    void (supabase as any).from('profiles').upsert({
+      id: session.user.id,
+      target_role: preferences.role,
+      current_level: preferences.level,
+      weekly_minutes: recommendation.sessionsPerWeek * recommendation.minutesPerSession,
+      weekly_session_goal: recommendation.sessionsPerWeek,
+    });
+  }, [preferences, recommendation, session?.user?.id]);
+
+  const startRecommendation = () => {
+    if (!recommendedJourney || !recommendation) return;
+    const firstQuestion = recommendedPool.find((question) => question.difficulty === recommendation.difficulty) ?? recommendedPool[0];
+    void track({ event: 'journey_selected', surface: 'lobby', subjectType: 'journey', subjectId: recommendedJourney.id, journeyId: recommendedJourney.id, metadata: { ...preferences, starting_mode: recommendation.startingMode } });
+    enrol.mutate(recommendedJourney.id, { onSuccess: () => firstQuestion ? navigate(`/career-prep/solve/${firstQuestion.slug}`) : navigate('/career-prep') });
+  };
 
   // The plan is the whole page here, so an empty frame while it loads reads as
   // a broken page. A skeleton of the same shape holds the space instead.
@@ -102,6 +132,16 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   // is conditional.
   return (
     <section className="container max-w-7xl mx-auto px-4 pb-4">
+      {daily?.question && (
+        <motion.button initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          onClick={() => onOpenQuestion(daily.question!.slug)}
+          className="mb-6 flex min-h-16 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left shadow-card transition-colors hover:bg-primary/10"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><CalendarDays className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-primary">Do now · Today&apos;s question</span><span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span><span className="block truncate text-xs text-muted-foreground">{daily.question.industry} · {daily.question.difficulty}</span></span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </motion.button>
+      )}
       {journeys.length === 0 ? null : journey ? (
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -213,11 +253,18 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           <CardContent className="p-8 text-center">
             <p className="text-sm font-bold text-primary">{recommendedJourney ? 'Your recommended journey' : 'Choose a journey'}</p>
             <h2 className="mb-2 mt-1 text-2xl font-extrabold">{recommendedJourney?.title ?? 'What are you working toward?'}</h2>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-4">
               {recommendedJourney
-                ? `Recommended from your ${preferredRole} goal. Your ${searchParams.get('level') ?? 'current level'} and ${searchParams.get('time') ?? 'available time'} each week are planning preferences; they do not change this Journey yet. You can choose another Journey without losing shared Topic progress.`
+                ? `Built for your ${preferredRole} goal: ${recommendation?.sessionsPerWeek} focused sessions of about ${recommendation?.minutesPerSession} minutes, starting with ${recommendation?.difficulty.toLowerCase()} practice.`
                 : 'One question. Skip it and browse — nothing is locked.'}
             </p>
+            {recommendedJourney && recommendation && (
+              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-5 flex max-w-lg flex-wrap justify-center gap-2 text-xs font-semibold">
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary"><Clock3 className="mr-1 inline h-3.5 w-3.5" />{recommendation.sessionsPerWeek} sessions/week</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">{recommendation.startingMode.replace('-', ' ')}</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">Start at {recommendation.difficulty}</span>
+              </motion.div>
+            )}
             <div className="flex flex-wrap justify-center gap-2">
               {orderedJourneys.map((j) => (
                 <Button
@@ -225,9 +272,9 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
                   className="rounded-full"
                   variant={recommendedJourney && j.id !== recommendedJourney.id ? 'outline' : 'default'}
                   disabled={enrol.isPending}
-                  onClick={() => enrol.mutate(j.id)}
+                  onClick={() => recommendedJourney?.id === j.id ? startRecommendation() : enrol.mutate(j.id)}
                 >
-                  {recommendedJourney?.id === j.id ? `Start ${j.title}` : j.title}
+                  {recommendedJourney?.id === j.id ? `Start first ${recommendation?.difficulty.toLowerCase()} question` : j.title}
                 </Button>
               ))}
             </div>
@@ -241,15 +288,20 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           <p className="mt-1 text-sm text-muted-foreground">Retrieve these without notes first. A correct attempt schedules the next review farther out.</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             {dueReviews.map((review) => (
-              <button key={review.slug} onClick={() => onOpenQuestion(review.slug)} className="flex min-h-14 items-center gap-3 rounded-xl border border-warning/30 bg-card p-3 text-left transition-colors hover:border-warning">
+              <div key={review.slug} className="flex min-h-14 items-center gap-2 rounded-xl border border-warning/30 bg-card p-2">
+              <button onClick={() => onOpenQuestion(review.slug)} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-warning-soft">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning-soft text-warning"><RotateCcw className="h-4 w-4" aria-hidden="true" /></span>
                 <span className="min-w-0 flex-1"><span className="block line-clamp-2 text-sm font-bold">{review.title}</span><span className="block truncate text-xs text-muted-foreground">{review.industry} · {review.difficulty}</span></span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               </button>
+              <Button size="sm" variant="ghost" className="min-h-11 shrink-0 px-2 text-xs" disabled={postpone.isPending} onClick={() => postpone.mutate(review)}>Tomorrow</Button>
+              </div>
             ))}
           </div>
         </div>
       )}
+
+      <LearnerRhythmCard initialGoal={recommendation?.sessionsPerWeek ?? 2} dueReviewCount={dueReviews.length} />
 
       <ClaimProfileCard />
 
@@ -275,28 +327,6 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
-
-      {daily?.question && (
-        <button
-          onClick={() => onOpenQuestion(daily.question!.slug)}
-          className="mb-6 flex min-h-14 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-        >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-            <CalendarDays className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold text-primary">
-              Do now · Today&apos;s question
-            </span>
-            <span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {daily.question.industry} · {daily.question.difficulty} ·{' '}
-              {journey ? `same for everyone on ${journey.title} today` : 'same question for everyone today'}
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
-      )}
 
       {nextUp.length > 0 && (
         <div className="mb-6">
@@ -337,19 +367,16 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
       {journey && plan.length > 0 && (
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <button className="mb-2 flex min-h-11 w-full items-center justify-between gap-2 text-left" onClick={() => setShowPlan((value) => !value)} aria-expanded={showPlan} aria-controls="journey-timeline">
               <h3 className="text-sm font-bold text-muted-foreground">
                 Your plan
               </h3>
-              <span className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                 {plan.reduce((n, r) => n + (r.duration_weeks ?? 0), 0)} weeks total
+                <ChevronDown className={`h-4 w-4 transition-transform ${showPlan ? 'rotate-180' : ''}`} />
               </span>
-            </div>
-            <JourneyTimeline
-              plan={plan}
-              currentWeek={journeyPosition(plan, enrolment?.started_at).week}
-              journeySlug={journey.slug}
-            />
+            </button>
+            <AnimatePresence initial={false}>{showPlan && <motion.div id="journey-timeline" initial={reduceMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}><JourneyTimeline plan={plan} currentWeek={journeyPosition(plan, enrolment?.started_at).week} journeySlug={journey.slug} /></motion.div>}</AnimatePresence>
           </CardContent>
         </Card>
       )}

@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageView } from "@/hooks/usePageView";
 import { track, trackOnce } from "@/services/funnel";
+import { motion, useReducedMotion } from "framer-motion";
+import { CURRENT_LEVELS, TARGET_ROLES, WEEKLY_TIME, preferencesToSearch, recommendLearningPlan, type LearningPreferences } from "@/domain/learningPlan";
 
 const learningPaths = [
   { title: "Career practice", description: "Solve SQL, Python, and business cases with feedback that explains your next move.", href: "/career-prep", cta: "Start a question", icon: Database, accent: "bg-series-data" },
@@ -16,29 +18,21 @@ const learningPaths = [
   { title: "Mentor sessions", description: "Bring an interview, project, or career decision and leave with a focused action plan.", href: "/book-session", cta: "Book a session", icon: CalendarCheck, accent: "bg-series-webinar" },
 ];
 
-const roles = ["Data analyst", "Data engineer", "AI engineer"] as const;
-const levels = ["Starting out", "Know the basics", "Interview ready"] as const;
-const weeklyTime = ["2 hours", "5 hours", "8+ hours"] as const;
-
-interface SkillPlanPreferences {
-  role: typeof roles[number];
-  level: typeof levels[number];
-  time: typeof weeklyTime[number];
-}
-
 const planQuestions = [
-  { key: "role", label: "Target role", icon: Target, options: roles },
-  { key: "level", label: "Current level", icon: UserRound, options: levels },
-  { key: "time", label: "Time each week", icon: Timer, options: weeklyTime },
+  { key: "role", label: "Target role", icon: Target, options: TARGET_ROLES },
+  { key: "level", label: "Current level", icon: UserRound, options: CURRENT_LEVELS },
+  { key: "time", label: "Time each week", icon: Timer, options: WEEKLY_TIME },
 ] as const;
 
 const Index = () => {
   usePageView("/");
+  const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const [counts, setCounts] = useState<{ courses: number | null; roadmaps: number | null; challenges: number | null }>({ courses: null, roadmaps: null, challenges: null });
-  const [preferences, setPreferences] = useState<SkillPlanPreferences>({ role: roles[0], level: levels[0], time: weeklyTime[1] });
+  const [preferences, setPreferences] = useState<LearningPreferences>({ role: TARGET_ROLES[0], level: CURRENT_LEVELS[0], time: WEEKLY_TIME[1] });
 
   useEffect(() => {
+    void trackOnce('landing-viewed', { event: 'landing_viewed', surface: 'lobby' });
     let active = true;
     const fetchCounts = async () => {
       const [courses, roadmaps, challenges] = await Promise.all([
@@ -57,15 +51,16 @@ const Index = () => {
     [counts.courses, "Published courses"],
     [counts.roadmaps, "Career roadmaps"],
   ] as const, [counts]);
+  const planPreview = recommendLearningPlan(preferences, []);
 
   const openPlan = () => {
     void trackOnce('diagnostic-started', { event: 'diagnostic_started', surface: 'lobby' });
     void track({ event: "diagnostic_completed", surface: "lobby", metadata: { ...preferences, weekly_time: preferences.time } });
     void track({ event: "engaged", surface: "lobby", metadata: { source: "skill_plan", ...preferences } });
-    navigate(`/career-prep?${new URLSearchParams(Object.entries(preferences)).toString()}`);
+    navigate(`/career-prep?${preferencesToSearch(preferences)}`);
   };
 
-  const selectPreference = <K extends keyof SkillPlanPreferences>(key: K, value: SkillPlanPreferences[K]) => {
+  const selectPreference = <K extends keyof LearningPreferences>(key: K, value: LearningPreferences[K]) => {
     void trackOnce('diagnostic-started', { event: 'diagnostic_started', surface: 'lobby' });
     setPreferences((current) => ({ ...current, [key]: value }));
   };
@@ -76,7 +71,7 @@ const Index = () => {
       <main id="main-content">
         <section className="relative overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-24 sm:pt-36">
           <div className="relative mx-auto grid min-w-0 max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="min-w-0">
+            <motion.div className="min-w-0" initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary"><Sparkles className="h-4 w-4" aria-hidden="true" /> Practical learning for data careers</div>
               <h1 className="max-w-4xl text-4xl font-extrabold leading-[1.07] tracking-tight sm:text-6xl lg:text-7xl">Build the data skills your <span className="text-primary">next role needs.</span></h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">Get a focused plan, learn through worked examples, then prove each skill with realistic practice questions—with no sign-up required to begin.</p>
@@ -87,7 +82,7 @@ const Index = () => {
               <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground">
                 {["Start anonymously", "Practice with feedback", "Keep your progress"].map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success-strong" aria-hidden="true" />{item}</span>)}
               </div>
-            </div>
+            </motion.div>
             <LearningDashboardPreview />
           </div>
         </section>
@@ -111,6 +106,11 @@ const Index = () => {
                   {options.map((option) => <Button key={option} type="button" variant={preferences[key] === option ? "default" : "outline"} className="min-h-11 whitespace-normal rounded-full px-3" onClick={() => selectPreference(key, option)} aria-pressed={preferences[key] === option}>{option}</Button>)}
                 </div></fieldset>
               ))}
+              <motion.div key={`${preferences.level}-${preferences.time}`} initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-3 gap-2 rounded-2xl bg-primary/5 p-3 text-center" aria-live="polite">
+                <div><p className="text-lg font-extrabold text-primary">{planPreview.sessionsPerWeek}</p><p className="text-xs text-muted-foreground">sessions/week</p></div>
+                <div><p className="text-lg font-extrabold text-primary">{planPreview.minutesPerSession}m</p><p className="text-xs text-muted-foreground">per session</p></div>
+                <div><p className="text-lg font-extrabold text-primary">{planPreview.difficulty}</p><p className="text-xs text-muted-foreground">starting practice</p></div>
+              </motion.div>
               <Button size="lg" className="min-h-12 w-full rounded-full text-base" onClick={openPlan}>Show my first step <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Button>
               <p className="text-center text-sm text-muted-foreground">Your selections are used only to open a relevant Journey.</p>
             </CardContent></Card>

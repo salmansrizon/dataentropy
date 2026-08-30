@@ -119,13 +119,9 @@ export default function Courses() {
                     {course.title}
                   </h3>
 
-                  {/* Registration Pill */}
-                  <div className="mt-3 z-10 bg-scrim/20 text-accent-foreground text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-accent-foreground/10 shadow-sm">
-                    REGISTRATION NOW
+                  <div className="z-10 mt-3 rounded-full border border-accent-foreground/10 bg-scrim/20 px-4 py-1.5 text-xs font-bold tracking-wide text-accent-foreground shadow-sm">
+                    View course details
                   </div>
-
-                  {/* Limited Seat available text */}
-                  <div className="mt-2 text-[9px] z-10 text-primary-foreground/70 uppercase tracking-widest font-medium">Limited seat available</div>
                 </div>
 
                 {/* Body Content */}
@@ -134,11 +130,7 @@ export default function Courses() {
                     <h4 className="line-clamp-2 flex min-h-[3.25rem] items-start gap-2 text-base font-bold leading-snug text-foreground sm:text-lg">
                        {course.title}
                        {course.is_free && (
-                         <span className="bg-danger text-danger-foreground text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
-                           <span className="relative flex h-1 w-1">
-                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
-                             <span className="relative inline-flex rounded-full h-1 w-1 bg-accent-foreground"></span>
-                           </span>
+                         <span className="flex h-5 shrink-0 items-center rounded-full bg-success-soft px-2 text-xs font-black text-success-strong">
                            FREE
                          </span>
                        )}

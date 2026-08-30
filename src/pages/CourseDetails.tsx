@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/services/funnel";
+import { useCourseProgress } from "@/hooks/useCourseProgress";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Course {
   id: string;
@@ -58,6 +60,10 @@ interface Course {
   what_you_will_learn?: { title: string; description: string }[];
   course_type?: string;
   created_at?: string;
+  access_terms?: string | null;
+  refund_policy?: string | null;
+  payment_verification_time?: string | null;
+  support_contact?: string | null;
 }
 
 interface Instructor {
@@ -103,6 +109,7 @@ export default function CourseDetails() {
   const { courseId } = useParams();
   usePageView(`/course/${courseId}`);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<CourseSection[]>([]);
@@ -117,7 +124,18 @@ export default function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
+  const [openLesson, setOpenLesson] = useState<string>('');
+  const orderedContentIds = sections.flatMap((section) => section.contents ?? []).map((content) => content.id);
+  const courseProgress = useCourseProgress(courseId, orderedContentIds);
   const [freeUnlocked, setFreeUnlocked] = useState(false);
+  const [paidUnlocked, setPaidUnlocked] = useState(false);
+  useEffect(() => {
+    if (courseProgress.resumeContentId && !openLesson) setOpenLesson(courseProgress.resumeContentId);
+  }, [courseProgress.resumeContentId, openLesson]);
+  useEffect(() => {
+    if (!courseId || !session?.user?.id) return;
+    void (supabase as any).from('course_enrollments').select('id').eq('course_id', courseId).eq('user_id', session.user.id).in('status', ['approved', 'confirmed']).maybeSingle().then(({ data }: any) => setPaidUnlocked(!!data));
+  }, [courseId, session?.user?.id]);
 
   // Cookie helpers for free course unlock tracking
   const getCookie = (name: string) => {
@@ -274,10 +292,12 @@ export default function CourseDetails() {
   const handleEnrollment = async (data: PaymentModalData) => {
     setEnrolling(true);
     try {
+      void track({ event: 'checkout_submitted', surface: 'completion', subjectType: 'course', subjectId: courseId, metadata: { free: course?.is_free === true, payment_method: course?.is_free ? 'free' : data.paymentMethod } });
       const { error } = await supabase
         .from("course_enrollments")
         .insert({
           course_id: courseId,
+          user_id: session?.user?.id ?? null,
           user_name: data.name,
           user_email: data.email,
           whatsapp_number: data.whatsapp,
@@ -388,6 +408,10 @@ export default function CourseDetails() {
   }
 
   const isFree = course.is_free || (!course.price && !course.discounted_price);
+  const totalLessons = sections.reduce((total, section) => total + (section.contents?.length ?? 0), 0);
+  const completedLessons = sections.flatMap((section) => section.contents ?? []).filter((item) => courseProgress.completedIds.has(item.id)).length;
+  const sampleContentId = sections.flatMap((section) => section.contents ?? []).find((content) => content.is_free)?.id ?? null;
+
   const reviewAverage = reviews.length
     ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
     : null;
@@ -492,9 +516,9 @@ export default function CourseDetails() {
               <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="grid gap-4">
                   {(course.faqs && course.faqs.length > 0 ? course.faqs : [
-                    { question: "How long will I have access?", answer: "Once enrolled, you get lifetime access to all course materials including future updates." },
-                    { question: "Do I get a certificate?", answer: "Yes, you'll receive a verified digital certificate upon successfully completing all modules." },
-                    { question: "Is there any support?", answer: "Absolutely! You'll get access to our private community where mentors and peers help each other." },
+                    { question: "How long will I have access?", answer: course.access_terms || "Access terms are confirmed before a paid enrollment is submitted." },
+                    { question: "Do I get a certificate?", answer: "The course page and enrollment confirmation state whether this course includes a certificate and what completion requires." },
+                    { question: "Is there any support?", answer: course.support_contact ? `Course support: ${course.support_contact}` : "Contact details are supplied with your enrollment confirmation." },
                     { question: "Are there prerequisites?", answer: "Basic computer literacy and a passion for learning are all you need!" },
                     { question: "Access on mobile?", answer: "Yes! Our platform is fully responsive. You can learn on any device anytime." }
                   ]).map((faq: any, i: number) => (
@@ -556,11 +580,12 @@ export default function CourseDetails() {
             )}
 
             {activeTab === 'content' && (
-               <div className="bg-card border border-border rounded-2xl p-6 shadow-card animate-in fade-in duration-500">
+               <div id="course-content" className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-card animate-in fade-in duration-500">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold">Course Content</h3>
-                  <p className="text-sm text-muted-foreground">{sections.length} sections • {sections.reduce((acc, s) => acc + (s.contents?.length || 0), 0)} lectures</p>
+                  <p className="text-sm text-muted-foreground">{completedLessons}/{totalLessons} complete</p>
                 </div>
+                {totalLessons > 0 && <div className="mb-6 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Course lesson progress" aria-valuemin={0} aria-valuemax={totalLessons} aria-valuenow={completedLessons}><motion.div className="h-full rounded-full bg-primary" initial={false} animate={{ width: `${completedLessons / totalLessons * 100}%` }} transition={{ duration: 0.25 }} /></div>}
                 <div className="w-full relative pl-0 sm:pl-6 overflow-hidden">
                   <div className="absolute left-[31px] sm:left-[39px] top-4 bottom-4 w-[2px] bg-border z-0 hidden sm:block"></div>
                   <div className="space-y-6 relative z-10">
@@ -574,7 +599,7 @@ export default function CourseDetails() {
                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold mt-0.5">Section {sIndex + 1}</p>
                              </div>
                           </div>
-                          <Accordion type="single" collapsible className="w-full space-y-3">
+                          <Accordion type="single" collapsible value={openLesson} onValueChange={(value) => { setOpenLesson(value); const item = section.contents?.find((candidate) => candidate.id === value); if (item && (isFree ? freeUnlocked : paidUnlocked || item.is_free || item.id === sampleContentId)) courseProgress.markOpened(item.id); }} className="w-full space-y-3">
                             {section.contents?.map((item) => (
                               <AccordionItem key={item.id} value={item.id} className="bg-background border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-card transition-all group/item">
                                 <AccordionTrigger className="w-full hover:no-underline px-4 py-4">
@@ -586,7 +611,7 @@ export default function CourseDetails() {
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
-                                      {(isFree ? freeUnlocked : item.is_free) ? <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-accent fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                                      {courseProgress.completedIds.has(item.id) ? <div className="grid h-8 w-8 place-items-center rounded-full bg-success-soft text-success"><CheckCircle2 className="h-4 w-4" /></div> : (isFree ? freeUnlocked : paidUnlocked || item.is_free || item.id === sampleContentId) ? <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-accent fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
                                     </div>
                                   </div>
                                 </AccordionTrigger>
@@ -600,7 +625,7 @@ export default function CourseDetails() {
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
 
-                                        if (isFree ? freeUnlocked : item.is_free) {
+                                        if (isFree ? freeUnlocked : paidUnlocked || item.is_free || item.id === sampleContentId) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
                                              <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-scrim">
@@ -659,6 +684,7 @@ export default function CourseDetails() {
                                          );
                                        }
                                      })()}
+                                     {(isFree ? freeUnlocked : paidUnlocked || item.is_free || item.id === sampleContentId) && <Button variant={courseProgress.completedIds.has(item.id) ? 'outline' : 'default'} className="min-h-11 rounded-full" disabled={courseProgress.saving} onClick={() => courseProgress.setCompleted(item.id, !courseProgress.completedIds.has(item.id))}>{courseProgress.completedIds.has(item.id) ? 'Mark incomplete' : 'Mark lesson complete'}</Button>}
                                   </div>
                                 </AccordionContent>
                               </AccordionItem>
@@ -767,16 +793,28 @@ export default function CourseDetails() {
                         "flex-1 h-14",
                         isFree ? "bg-success hover:bg-success/90 text-success-foreground" : ""
                       )}
-                      onClick={() => setShowEnrollmentModal(true)}
+                      onClick={() => {
+                        if (courseProgress.resumeContentId && ((isFree && freeUnlocked) || paidUnlocked)) {
+                          setActiveTab('content'); setOpenLesson(courseProgress.resumeContentId);
+                          window.setTimeout(() => document.getElementById('course-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                        } else {
+                          void track({ event: 'checkout_started', surface: 'completion', subjectType: 'course', subjectId: course.id });
+                          setShowEnrollmentModal(true);
+                        }
+                      }}
                     >
-                      Start course
+                      {courseProgress.resumeContentId && ((isFree && freeUnlocked) || paidUnlocked)
+                        ? courseProgress.hasStarted ? `Continue course · ${completedLessons}/${totalLessons}` : 'Start first lesson'
+                        : 'Start course'}
                     </Button>
                     <Button size="lg" variant="outline" className="w-14 h-14 p-0" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                  </div>
+                 {!isFree && !paidUnlocked && sampleContentId && <Button variant="outline" className="mb-6 min-h-12 w-full rounded-full" onClick={() => { setActiveTab('content'); setOpenLesson(sampleContentId); window.setTimeout(() => document.getElementById('course-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}><Play className="mr-2 h-4 w-4" />Try the first lesson free</Button>}
                  <ul className="space-y-4">
-                    <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> Full lifetime access</li>
-                    <li className="flex items-start gap-4 text-sm font-medium"><Award className="w-5 h-5 shrink-0" /> Certificate of completion</li>
+                    {course.access_terms && <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> {course.access_terms}</li>}
+                    <li className="flex items-start gap-4 text-sm font-medium"><Award className="w-5 h-5 shrink-0" /> Completion is recorded lesson by lesson</li>
                  </ul>
+                 {!isFree && <div className="mt-6 space-y-2 rounded-xl border bg-secondary/60 p-4 text-sm"><p className="font-bold">Before you pay</p><p><span className="font-semibold">Verification:</span> {course.payment_verification_time || 'Ask support for the current verification time before submitting.'}</p><p><span className="font-semibold">Refunds:</span> {course.refund_policy || 'No refund policy has been published for this course; contact support before paying.'}</p><p><span className="font-semibold">Support:</span> {course.support_contact || 'Use the contact information in your enrollment confirmation.'}</p></div>}
                 </div>
              </div>
 

@@ -16,11 +16,17 @@ import { supabase } from '@/integrations/supabase/client';
  */
 
 export type FunnelEvent =
+  | 'landing_viewed'
   | 'arrived'
   | 'engaged'
   | 'diagnostic_started'
   | 'diagnostic_completed'
   | 'learning_attempted'
+  | 'learning_item_started'
+  | 'attempt_submitted'
+  | 'learning_item_completed'
+  | 'journey_selected'
+  | 'review_due'
   | 'review_scheduled'
   | 'review_completed'
   | 'solved'
@@ -30,6 +36,10 @@ export type FunnelEvent =
   | 'enrolled'
   | 'offer_shown'
   | 'offer_clicked'
+  | 'checkout_started'
+  | 'checkout_submitted'
+  | 'payment_verified'
+  | 'payment_refunded'
   | 'struggled'
   // Reporting only, like every other event here: whether the Concept Cards move
   // the retry pass rate is the one number that says if they work.
@@ -59,10 +69,9 @@ interface TrackArgs {
 
 const VISITOR_KEY = 'analytics_visitor_id';
 const SESSION_KEY = 'careerprep_tab_session';
-const LAST_VISIT_KEY = 'careerprep_last_visit_date';
 
 /** The one durable anonymous id, shared with the analytics service. */
-function visitorId(): string {
+export function visitorId(): string {
   let id = localStorage.getItem(VISITOR_KEY);
   if (!id) {
     id = crypto.randomUUID();
@@ -114,21 +123,18 @@ export async function trackOnce(key: string, args: TrackArgs): Promise<void> {
   await track(args);
 }
 
+export async function claimVisitorHistory(): Promise<void> {
+  try {
+    await (supabase as any).rpc('claim_visitor_history', { p_visitor_id: visitorId() });
+  } catch {
+    // Attribution repair is best-effort and must never block authentication.
+  }
+}
+
 /**
  * A return is a visit on a later calendar day, not another render or another
  * tab in the same session. This keeps the retention event useful without
  * storing contact details or blocking anonymous learners.
  */
-export async function trackReturnVisit(now = new Date()): Promise<void> {
-  const today = now.toISOString().slice(0, 10);
-  const previous = localStorage.getItem(LAST_VISIT_KEY);
-  localStorage.setItem(LAST_VISIT_KEY, today);
-  if (!previous || previous === today) return;
-
-  const elapsedMs = now.getTime() - new Date(`${previous}T00:00:00.000Z`).getTime();
-  await track({
-    event: 'returned',
-    surface: 'lobby',
-    metadata: { days_since_previous_visit: Math.max(1, Math.floor(elapsedMs / 86_400_000)) },
-  });
-}
+// D1/D7/D28 retention is derived from server-timestamped learning_activity rows.
+// A browser-generated `returned` event would be forgeable and is intentionally absent.

@@ -176,6 +176,10 @@ interface FormData {
   what_you_will_learn: { title: string; description: string }[];
   course_type: string;
   video_url: string;
+  access_terms: string;
+  refund_policy: string;
+  payment_verification_time: string;
+  support_contact: string;
 }
 
 const initialFormData: FormData = {
@@ -205,6 +209,10 @@ const initialFormData: FormData = {
   what_you_will_learn: [],
   course_type: "regular",
   video_url: "",
+  access_terms: "",
+  refund_policy: "",
+  payment_verification_time: "",
+  support_contact: "",
 };
 
 export default function CourseManager() {
@@ -270,6 +278,10 @@ export default function CourseManager() {
             what_you_will_learn: formData.what_you_will_learn || [],
             course_type: formData.course_type || 'regular',
             video_url: formData.video_url || null,
+            access_terms: formData.access_terms || null,
+            refund_policy: formData.refund_policy || null,
+            payment_verification_time: formData.payment_verification_time || null,
+            support_contact: formData.support_contact || null,
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -303,6 +315,10 @@ export default function CourseManager() {
             what_you_will_learn: formData.what_you_will_learn || [],
             course_type: formData.course_type || 'regular',
             video_url: formData.video_url || null,
+            access_terms: formData.access_terms || null,
+            refund_policy: formData.refund_policy || null,
+            payment_verification_time: formData.payment_verification_time || null,
+            support_contact: formData.support_contact || null,
           })
           .select('id')
           .single();
@@ -673,6 +689,10 @@ export default function CourseManager() {
         what_you_will_learn: courseData.what_you_will_learn || [],
         course_type: courseData.course_type || 'regular',
         video_url: courseData.video_url || "",
+        access_terms: courseData.access_terms || "",
+        refund_policy: courseData.refund_policy || "",
+        payment_verification_time: courseData.payment_verification_time || "",
+        support_contact: courseData.support_contact || "",
       });
       setShowDialog(true);
     } catch (error) {
@@ -1045,6 +1065,16 @@ export default function CourseManager() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-4">
+                  <div><h3 className="text-lg font-semibold">Trust and payment terms</h3><p className="text-sm text-muted-foreground">Publish these before accepting payment. Empty fields display a clear “not published” warning to learners.</p></div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div><Label htmlFor="access_terms">Course access terms</Label><Textarea id="access_terms" className="mt-1 min-h-24" value={formData.access_terms} onChange={(event) => setFormData({ ...formData, access_terms: event.target.value })} placeholder="e.g. Access for 12 months from verification" /></div>
+                    <div><Label htmlFor="refund_policy">Refund/cancellation policy</Label><Textarea id="refund_policy" className="mt-1 min-h-24" value={formData.refund_policy} onChange={(event) => setFormData({ ...formData, refund_policy: event.target.value })} placeholder="State eligibility, deadline, and request process" /></div>
+                    <div><Label htmlFor="verification_time">Payment verification time</Label><Input id="verification_time" className="mt-1 min-h-11" value={formData.payment_verification_time} onChange={(event) => setFormData({ ...formData, payment_verification_time: event.target.value })} placeholder="e.g. Within 1 business day" /></div>
+                    <div><Label htmlFor="support_contact">Support channel</Label><Input id="support_contact" className="mt-1 min-h-11" value={formData.support_contact} onChange={(event) => setFormData({ ...formData, support_contact: event.target.value })} placeholder="e.g. support@example.com" /></div>
                   </div>
                 </div>
 

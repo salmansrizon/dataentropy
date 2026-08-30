@@ -34,6 +34,8 @@ import TopicManager from '@/components/admin/TopicManager';
 import FunnelDashboard from '@/components/admin/FunnelDashboard';
 import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
 import CourseContentManager from '@/components/admin/CourseContentManager';
+import LearningQualityScreen from '@/components/admin/LearningQualityScreen';
+import TopicQueryScreen from '@/components/admin/TopicQueryScreen';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -58,6 +60,8 @@ const navigation = [
   { id: 'topics', label: 'Topics', icon: Lightbulb },
   { id: 'ebooks', label: 'Ebooks', icon: BookDown },
   { id: 'funnel', label: 'Funnel', icon: TrendingUp },
+  { id: 'learning-quality', label: 'Learning Quality', icon: ListChecks },
+  { id: 'topic-qna', label: 'Learner queries', icon: MessageSquare },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
@@ -110,6 +114,10 @@ const Admin = () => {
         return <EbookManager />;
       case 'funnel':
         return <FunnelDashboard />;
+      case 'learning-quality':
+        return <LearningQualityScreen />;
+      case 'topic-qna':
+        return <TopicQueryScreen />;
       case 'webinars':
         return <WebinarManager />;
       case 'sections':

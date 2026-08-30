@@ -33,6 +33,7 @@ export interface TopicSection {
   title: string;
   body: string;
   takeaway: string | null;
+  section_type: 'outcome' | 'mental_model' | 'worked_example' | 'faded_example' | 'independent_attempt' | 'feedback' | 'later_review';
   diagram: string | null;
   order_index: number;
 }
@@ -75,7 +76,7 @@ export function useTopic(slug?: string) {
 
       const { data: sections } = await (supabase as any)
         .from('topic_sections')
-        .select('id, title, body, takeaway, diagram, order_index')
+        .select('id, title, body, takeaway, diagram, order_index, section_type')
         .eq('topic_id', topic.id)
         .order('order_index');
 
