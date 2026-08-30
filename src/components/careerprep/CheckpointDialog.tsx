@@ -18,10 +18,11 @@ interface Props {
   topicTitle: string;
   // The explanation to show on a first failure, if the Topic has one.
   topic?: Topic | null;
+  onPassed?: () => void;
   onClose: () => void;
 }
 
-const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onClose }: Props) => {
+const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, onClose }: Props) => {
   const [picked, setPicked] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [outcome, setOutcome] = useState<'asking' | 'right' | 'wrong'>('asking');
@@ -41,6 +42,7 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onClose }: P
     setAttempts((n) => n + 1);
     setAnswer(res.correctOption);
     setOutcome(res.isCorrect ? 'right' : 'wrong');
+    if (res.isCorrect) onPassed?.();
   };
 
   const retry = () => {

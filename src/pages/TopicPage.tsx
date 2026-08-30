@@ -1,26 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, CheckCircle2, HelpCircle, Loader2, Code2, ListChecks, Map, PlayCircle, BookDown, Video, Briefcase, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, BookDown, CheckCircle2, ExternalLink, Map, PlayCircle, Video } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
-import TopicCard from '@/components/careerprep/TopicCard';
 import CheckpointDialog from '@/components/careerprep/CheckpointDialog';
-import { useTopic, useTopicProgress, useTopicNavigation } from '@/hooks/useTopics';
-import { useCheckpoint } from '@/hooks/useCheckpoints';
-import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 import ShareBar from '@/components/careerprep/ShareBar';
-import { track } from '@/services/funnel';
+import TopicLearningBoard from '@/components/careerprep/TopicLearningBoard';
+import TopicQueries from '@/components/careerprep/TopicQueries';
 import { CourseCountdown } from '@/components/CourseCountdown';
 import { TopicSkeleton } from '@/components/ui/skeletons';
-import TopicSections from '@/components/careerprep/TopicSections';
-import LearningLoop from '@/components/careerprep/LearningLoop';
-import TopicQueries from '@/components/careerprep/TopicQueries';
+import { useCheckpoint } from '@/hooks/useCheckpoints';
+import { useDocumentMeta } from '@/hooks/useDocumentMeta';
+import { useTopic, useTopicNavigation, useTopicProgress } from '@/hooks/useTopics';
 import { recordLearningActivity } from '@/services/learningActivity';
-
-// The Topic page: explanation, practice, checkpoint — the interactive medium
-// Career Prep is for. A Roadmap covers the same subject matter as a written
-// reference and is reached separately; neither renders the other.
+import { track } from '@/services/funnel';
 
 const TopicPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -29,15 +23,14 @@ const TopicPage = () => {
   const { passed } = useTopicProgress();
   const { checkpoint } = useCheckpoint(data?.checkpoint?.id);
   const { nav } = useTopicNavigation(slug);
+  const [checkpointOpen, setCheckpointOpen] = useState(false);
+  const [checkpointPassed, setCheckpointPassed] = useState(false);
 
-  // Browser-side only. The preview a social crawler sees is a static file
-  // written at build time — see scripts/prerender-topics.mjs.
   useDocumentMeta({
     title: data ? `${data.topic.title} — Career Prep` : undefined,
     description: data ? `${data.topic.what_it_is} ${data.topic.why_it_matters}`.slice(0, 200) : undefined,
   });
-  const [open, setOpen] = useState(false);
-  const [recallOpen, setRecallOpen] = useState(false);
+
   const trackedTopicId = data?.topic?.id;
   const trackedTopicSlug = data?.topic?.slug;
   const trackedTopicPassed = trackedTopicId ? passed.has(trackedTopicId) : false;
@@ -48,14 +41,7 @@ const TopicPage = () => {
     void recordLearningActivity({ type: 'topic', subjectId: trackedTopicId, successful: trackedTopicPassed, metadata: { slug: trackedTopicSlug } });
   }, [trackedTopicId, trackedTopicPassed, trackedTopicSlug]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <TopicSkeleton />
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-background"><Navbar /><TopicSkeleton /></div>;
 
   if (!data) {
     return (
@@ -71,292 +57,96 @@ const TopicPage = () => {
   }
 
   const { topic, practice, caseStudies, sections, references, offers } = data;
-  const isDone = passed.has(topic.id);
+  const isDone = passed.has(topic.id) || checkpointPassed;
+
+  const toolkit = (
+    <div className="space-y-6">
+      <ShareBar title={topic.title} surface="topic" subjectId={topic.id} />
+
+      {references.length > 0 ? (
+        <section aria-labelledby="references-heading">
+          <h4 id="references-heading" className="font-extrabold">Trusted references</h4>
+          <p className="mt-1 text-sm text-muted-foreground">Primary sources and open courses selected for a clear reason.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {references.map((reference) => (
+              <a key={reference.id} href={reference.url} target="_blank" rel="noopener noreferrer"
+                onClick={() => void track({ event: 'offer_clicked', surface: 'topic', subjectType: 'topic', subjectId: topic.id, metadata: { reference: reference.url } })}
+                className="flex min-h-16 items-start gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{reference.label}</span>{reference.note ? <span className="mt-1 block text-xs leading-5 text-muted-foreground">{reference.note}</span> : null}</span>
+                <Badge variant="outline" className="shrink-0 text-[10px]">{reference.is_free ? reference.kind : `${reference.kind} · paid`}</Badge>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {(offers.course || offers.ebook || offers.webinar) ? (
+        <section aria-labelledby="deeper-heading">
+          <h4 id="deeper-heading" className="font-extrabold">Go deeper</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {offers.course ? (
+              <button onClick={() => navigate(`/course/${offers.course!.id}`)} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><PlayCircle className="h-4 w-4" />Recorded course</span>
+                <span className="mt-2 block text-sm font-bold leading-snug">{offers.course.title}</span>
+                <span className="mt-2 block text-xs text-muted-foreground">{offers.course.is_free ? 'Free' : `৳${offers.course.price}`}</span>
+              </button>
+            ) : null}
+            {offers.ebook ? (
+              <button onClick={() => navigate('/career-prep')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><BookDown className="h-4 w-4" />Study material</span>
+                <span className="mt-2 block text-sm font-bold leading-snug">{offers.ebook.title}</span>
+                <span className="mt-2 block text-xs text-muted-foreground">Free with your email</span>
+              </button>
+            ) : null}
+            {offers.webinar ? (
+              <button onClick={() => navigate('/webinars')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><Video className="h-4 w-4" />Live session</span>
+                <span className="mt-2 block text-sm font-bold leading-snug">{offers.webinar.title}</span>
+                {offers.webinar.webinar_date ? <span className="mt-2 block"><CourseCountdown startDate={offers.webinar.webinar_date} /></span> : null}
+              </button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {nav?.roadmap ? (
+        <section className="rounded-2xl border border-border bg-muted/30 p-4" aria-labelledby="roadmap-heading">
+          <h4 id="roadmap-heading" className="font-extrabold">Want the wider map?</h4>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">This stage follows the <strong className="text-foreground">{nav.roadmap.title}</strong> roadmap. It is optional context.</p>
+          <Button variant="outline" className="mt-3 min-h-11 gap-2 rounded-full" onClick={() => navigate(`/roadmaps/${nav.roadmap!.slug}`)}><Map className="h-4 w-4" />Read the roadmap</Button>
+        </section>
+      ) : null}
+
+      <TopicQueries topicId={topic.id} />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_34%),hsl(var(--background))]">
       <Navbar />
-      <div className="mx-auto max-w-3xl px-4 pb-16 pt-24">
+      <main className="mx-auto max-w-6xl px-3 pb-10 pt-20 sm:px-5 sm:pt-24">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => navigate('/career-prep')}>
-            <ArrowLeft className="h-4 w-4" /> Career Prep
-          </Button>
-          {/* Position inside the learner's own plan — never a global count, so a
-              Data Analyst is not told they are on topic 4 of an AI syllabus. */}
-          {nav?.journey && nav.index >= 0 && (
-            <span className="text-xs text-muted-foreground">
-              {nav.journey.title} · topic {nav.index + 1} of {nav.sequence.length}
-            </span>
-          )}
+          <Button variant="ghost" size="sm" className="min-h-11 gap-1.5 rounded-full text-muted-foreground" onClick={() => navigate('/career-prep')}><ArrowLeft className="h-4 w-4" />Career Prep</Button>
+          {nav?.journey && nav.index >= 0 ? <span className="text-xs text-muted-foreground">{nav.journey.title} · topic {nav.index + 1} of {nav.sequence.length}</span> : null}
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-black tracking-tight sm:text-2xl lg:text-3xl [overflow-wrap:anywhere]">{topic.title}</h1>
-          {isDone && (
-            <Badge className="border-0 bg-success-soft text-success-strong">
-              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Passed
-            </Badge>
-          )}
+        <div className="mb-5 flex flex-wrap items-center gap-3 px-1">
+          <h1 className="max-w-4xl text-2xl font-black tracking-tight [overflow-wrap:anywhere] sm:text-3xl lg:text-4xl">{topic.title}</h1>
+          {isDone ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Passed</Badge> : null}
         </div>
 
-        {/* The explanation opens by default here. On a Step it was an escape
-            hatch; on the Topic page it is the point of the page. */}
-        <TopicCard topic={topic} surface="topic" defaultOpen />
+        <TopicLearningBoard topic={topic} sections={sections} practice={practice} caseStudies={caseStudies}
+          isDone={isDone} hasCheckpoint={!!checkpoint} toolkit={toolkit} nextTopic={nav?.next}
+          onOpenQuestion={(questionSlug) => navigate(`/career-prep/solve/${questionSlug}`)}
+          onOpenCheckpoint={() => setCheckpointOpen(true)}
+          onOpenNext={() => nav?.next && navigate(`/career-prep/topic/${nav.next.slug}`)} />
+      </main>
 
-        {/* Every Topic is a shareable page in its own right: free, complete,
-            and useful to someone who has never heard of this site. Sharing sits
-            under the explanation, where a reader has just decided it was good. */}
-        <div className="mt-4">
-          <ShareBar title={topic.title} surface="topic" subjectId={topic.id} />
-        </div>
-
-        <TopicSections sections={sections} />
-        <LearningLoop sections={sections} topicTitle={topic.title} />
-
-        <section className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5" aria-labelledby="recall-heading">
-          <p className="text-sm font-bold text-primary">Retrieve before you practise</p>
-          <h2 id="recall-heading" className="mt-1 text-lg font-bold">Close the notes in your mind: how would you explain {topic.title}?</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">Say one sentence out loud or write it down, then name one decision this topic helps you make.</p>
-          <Button variant="outline" className="mt-4 min-h-11 rounded-xl" onClick={() => setRecallOpen((value) => !value)} aria-expanded={recallOpen} aria-controls="recall-check">
-            {recallOpen ? 'Hide self-check' : 'Reveal a self-check'}
-          </Button>
-          {recallOpen && <div id="recall-check" className="mt-4 rounded-xl bg-card p-4 text-sm leading-6"><strong>A useful answer should connect the idea to this outcome:</strong> {topic.why_it_matters}</div>}
-        </section>
-
-        <section id="independent-practice" className="mt-6 scroll-mt-24">
-          <h2 className="mb-1 text-lg font-bold">Try it independently</h2>
-          <p className="mb-3 text-sm text-muted-foreground">Attempt before reopening the explanation. Feedback will point to the next useful step.</p>
-          {practice.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              No practice questions attached to this topic yet.
-            </p>
-          ) : (
-            <div className="grid gap-1.5">
-              {practice.map((q) => (
-                <button
-                  key={q.id}
-                  onClick={() => navigate(`/career-prep/solve/${q.slug}`)}
-                  className="flex min-h-12 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:border-primary/40"
-                >
-                  {q.question_type === 'mcq'
-                    ? <ListChecks className="h-4 w-4 shrink-0 text-series-data" />
-                    : <Code2 className="h-4 w-4 shrink-0 text-series-web" />}
-                  <span className="min-w-0 flex-1 text-sm font-medium leading-snug [overflow-wrap:anywhere]">{q.title}</span>
-                  {q.difficulty && (
-                    <Badge variant="outline" className="shrink-0 text-[10px]">{q.difficulty}</Badge>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {caseStudies.length > 0 && (
-          <section className="mt-6">
-            <h2 className="mb-1 text-lg font-bold">Apply it in context ({caseStudies.length})</h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              A real scenario, worked through one decision at a time — the shape the interview round
-              actually takes.
-            </p>
-
-            <div className="grid gap-1.5">
-              {caseStudies.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => navigate(`/career-prep/solve/${c.slug}`)}
-                  className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-left transition-colors hover:border-primary/50"
-                >
-                  <Briefcase className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1 text-sm font-semibold">{c.title}</span>
-                  {c.difficulty && (
-                    <Badge variant="outline" className="shrink-0 text-[10px]">{c.difficulty}</Badge>
-                  )}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="mt-6">
-          <h2 className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-            Checkpoint
-          </h2>
-
-          {!checkpoint ? (
-            <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              This topic has no checkpoint yet.
-            </p>
-          ) : isDone ? (
-            <div className="flex items-center gap-2 rounded-xl border border-success/30 bg-success-soft/40 p-4 text-sm text-success">
-              <CheckCircle2 className="h-4 w-4" /> You have passed this checkpoint.
-            </div>
-          ) : (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="mb-3 text-sm text-muted-foreground">
-                One multiple-choice question closes this topic. Getting it wrong changes nothing you have
-                earned — only the certificate needs every checkpoint passed.
-              </p>
-              <Button className="gap-2 rounded-full" onClick={() => setOpen(true)}>
-                <HelpCircle className="h-4 w-4" /> Answer the checkpoint
-              </Button>
-            </div>
-          )}
-        </section>
-        <TopicQueries topicId={topic.id} />
-
-        {references.length > 0 && (
-          <section className="mt-6">
-            <h2 className="mb-1 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-              Learn more ({references.length})
-            </h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Primary sources and open courses, chosen one per reason — not a bookmark dump.
-            </p>
-
-            <div className="grid gap-1.5">
-              {references.map((r) => (
-                <a
-                  key={r.id}
-                  href={r.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => void track({ event: 'offer_clicked', surface: 'topic', subjectType: 'topic', subjectId: topic.id, metadata: { reference: r.url } })}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40"
-                >
-                  <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{r.label}</span>
-                    {r.note && <span className="block text-xs text-muted-foreground">{r.note}</span>}
-                  </span>
-                  <Badge variant="outline" className="shrink-0 text-[10px]">
-                    {r.is_free ? r.kind : `${r.kind} · paid`}
-                  </Badge>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Extension, and only after the free material is done: the Topic is
-            complete on its own, and this is the deeper cut for the learner who
-            wants it. Placed under the next-topic step so continuing the plan is
-            always the more obvious action. */}
-        {(offers.course || offers.ebook || offers.webinar) && (
-          <section className="mt-10">
-            <h2 className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-              Go further on this topic
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {offers.course && (
-                <button
-                  onClick={() => navigate(`/course/${offers.course!.id}`)}
-                  className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40"
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary">
-                    <PlayCircle className="h-3.5 w-3.5" /> Recorded course
-                  </div>
-                  <p className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug">{offers.course.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{offers.course.short_description}</p>
-                  <p className="mt-2 text-xs font-bold">
-                    {offers.course.is_free ? 'Free' : `৳${offers.course.price}`}
-                  </p>
-                </button>
-              )}
-
-              {offers.ebook && (
-                <button
-                  onClick={() => navigate('/career-prep')}
-                  className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40"
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary">
-                    <BookDown className="h-3.5 w-3.5" /> Study material
-                  </div>
-                  <p className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug">{offers.ebook.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground line-clamp-3">{offers.ebook.description}</p>
-                  <p className="mt-2 text-xs font-bold">Free with your email</p>
-                </button>
-              )}
-
-              {offers.webinar && (
-                <button
-                  onClick={() => navigate('/webinars')}
-                  className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40"
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary">
-                    <Video className="h-3.5 w-3.5" /> Live session
-                  </div>
-                  <p className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug">{offers.webinar.title}</p>
-                  {offers.webinar.webinar_date && (
-                    <>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(offers.webinar.webinar_date).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}
-                      </p>
-                      <div className="mt-2"><CourseCountdown startDate={offers.webinar.webinar_date} /></div>
-                    </>
-                  )}
-                  <p className="mt-2 text-xs font-bold">{offers.webinar.is_free ? 'Free' : 'Paid'}</p>
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {nav?.roadmap && (
-          <div className="mt-8 rounded-xl border border-border bg-muted/30 p-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-              Want the wider map?
-            </p>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              This stage follows the <strong className="text-foreground">{nav.roadmap.title}</strong> roadmap.
-              It is optional reading — the topics above are what this plan actually covers.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 gap-1.5 rounded-full"
-              onClick={() => navigate(`/roadmaps/${nav.roadmap!.slug}`)}
-            >
-              <Map className="h-3.5 w-3.5" /> Read the roadmap
-            </Button>
-          </div>
-        )}
-
-        {/* The end of a Topic is the start of the next one. Without this the
-            learner has to go back to the timeline and find their place again,
-            which is where a plan quietly stops being followed. */}
-        {nav && (nav.next || nav.previous) && (
-          <nav className="mt-8 flex flex-col gap-2 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-            {nav.previous ? (
-              <Button
-                variant="ghost"
-                className="justify-start gap-2 text-muted-foreground"
-                onClick={() => navigate(`/career-prep/topic/${nav.previous!.slug}`)}
-              >
-                <ArrowLeft className="h-4 w-4" /> {nav.previous.title}
-              </Button>
-            ) : <span />}
-            {nav.next && (
-              <Button
-                className="justify-between gap-3 rounded-full sm:justify-center"
-                onClick={() => navigate(`/career-prep/topic/${nav.next!.slug}`)}
-              >
-                <span className="truncate">Next: {nav.next.title}</span>
-                <ArrowRight className="h-4 w-4 shrink-0" />
-              </Button>
-            )}
-          </nav>
-        )}
-      </div>
-
-      {open && checkpoint && (
-        <CheckpointDialog
-          topicId={topic.id}
-          checkpoint={checkpoint}
-          topicTitle={topic.title}
-          topic={topic}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {checkpointOpen && checkpoint ? (
+        <CheckpointDialog topicId={topic.id} checkpoint={checkpoint} topicTitle={topic.title} topic={topic}
+          onPassed={() => setCheckpointPassed(true)} onClose={() => setCheckpointOpen(false)} />
+      ) : null}
     </div>
   );
 };
