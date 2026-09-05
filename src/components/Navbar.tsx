@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { ChartNoAxesColumnIncreasing, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { ThemeToggle } from "./ThemeToggle"
@@ -11,9 +11,9 @@ const Navbar = () => {
   const navItems = [
     { name: "Courses", href: "/courses" },
     { name: "Learning Paths", href: "/career-prep" },
-    { name: "For Teams", href: "/book-session" },
+    { name: "Mentoring", href: "/book-session" },
     { name: "Resources", href: "/blog" },
-    { name: "Pricing", href: "/courses" },
+    { name: "Roadmaps", href: "/roadmaps" },
   ]
 
   // Helper function to handle hash links
@@ -35,13 +35,13 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-panel/80 backdrop-blur-xl border-b border-border shadow-sm">
+    <nav className="site-nav fixed top-0 left-0 right-0 z-50 bg-panel/80 backdrop-blur-xl border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center gap-3 lg:gap-0 min-w-0">
-            <Link to="/" className="font-display text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
-              DataEntropy
+            <Link to="/" className="inline-flex items-center gap-2 font-display text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
+              <ChartNoAxesColumnIncreasing className="h-7 w-7 text-primary" aria-hidden="true" />DataEntropy
             </Link>
             
             {/* Mobile Quick Action - Career Prep */}
@@ -130,7 +130,7 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="lg:hidden">
-            <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
+            <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu" aria-expanded={isOpen}>
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>

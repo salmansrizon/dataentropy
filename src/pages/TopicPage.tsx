@@ -125,13 +125,13 @@ const TopicPage = () => {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_34%),hsl(var(--background))]">
       <Navbar />
-      <main className="mx-auto max-w-6xl px-3 pb-10 pt-20 sm:px-5 sm:pt-24">
+      <main className="mx-auto max-w-6xl px-3 pb-10 pt-28 sm:px-5 sm:pt-28">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Button variant="ghost" size="sm" className="min-h-11 gap-1.5 rounded-full text-muted-foreground" onClick={() => navigate('/career-prep')}><ArrowLeft className="h-4 w-4" />Career Prep</Button>
           {nav?.journey && nav.index >= 0 ? <span className="text-xs text-muted-foreground">{nav.journey.title} · topic {nav.index + 1} of {nav.sequence.length}</span> : null}
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center gap-3 px-1">
+        <div className="page-heading flex flex-wrap items-center gap-3 px-1">
           <h1 className="max-w-4xl text-2xl font-black tracking-tight [overflow-wrap:anywhere] sm:text-3xl lg:text-4xl">{topic.title}</h1>
           {isDone ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Passed</Badge> : null}
         </div>

@@ -68,7 +68,7 @@ const JourneyTimeline = ({ plan, currentWeek, journeySlug }: Props) => {
           const roadmapPublished = stage.roadmap?.status === 'published';
 
           return (
-            <li key={stage.id} className="relative flex gap-4 pb-4">
+            <motion.li key={stage.id} initial={reduceMotion ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3 }} className="relative flex gap-4 pb-4">
               <span
                 className={`relative z-10 mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200 ${stageDone ? 'border-success bg-success-soft text-success-strong' : stageCurrent ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground'}`}
                 aria-label={stageDone ? 'Stage complete' : stageCurrent ? 'Stage in progress' : 'Stage upcoming'}
@@ -118,7 +118,7 @@ const JourneyTimeline = ({ plan, currentWeek, journeySlug }: Props) => {
                   </Button>
                 )}
               </div>
-            </li>
+            </motion.li>
           );
         })}
 

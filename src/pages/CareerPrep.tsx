@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
+import { Compass, BookOpen, CheckCircle2 } from 'lucide-react';
+import '@/learning-paths.css';
 import Navbar from '@/components/Navbar';
+import portrait from '@/assets/formal.jpg';
+import LottieAnimation from '@/components/LottieAnimation';
 import { useQuestions } from '@/hooks/useCareerPrep';
 import JourneyPanel from '@/components/careerprep/JourneyPanel';
 import { trackOnce } from '@/services/funnel';
@@ -32,25 +35,29 @@ const CareerPrep = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <div className="relative overflow-hidden pb-8 pt-28 sm:pt-32">
-        <main className="container max-w-7xl mx-auto px-4 relative z-10">
-          <div className="flex flex-col gap-4 mb-2">
-            <Badge className="w-fit border-primary/20 bg-primary/10 px-4 py-1.5 font-semibold text-primary">
-              Your learning workspace
-            </Badge>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="text-primary">Keep building evidence.</span>
-              <br />
-              <span className="text-foreground">One useful next step at a time.</span>
-            </h1>
+      <main>
+        <header className="learning-paths-hero">
+          <div>
+            <p className="page-eyebrow">Learning paths · Built around your goal</p>
+            <h1>A clear path to your <span className="whitespace-nowrap text-primary">next role.</span></h1>
+            <p>Choose a direction. Build the skills through focused lessons and real practice. Pick up where you left off, one useful step at a time.</p>
           </div>
-        </main>
-      </div>
-
+          <figure className="learning-paths-portrait">
+            <img src={portrait} alt="Salman Sakib, data practitioner" width={896} height={1152} fetchPriority="high" />
+            <figcaption>Practical skills. A human perspective.</figcaption>
+          </figure>
+          <div className="learning-paths-animation" aria-hidden="true"><LottieAnimation src="/animations/learning-path-stages.json" loop={false} className="h-full w-full" /></div>
+          <ol className="learning-paths-route" aria-label="How learning paths work">
+            <li><Compass aria-hidden="true" /><div><strong>Choose your direction</strong><small>Find a path that fits the work you want to do.</small></div></li>
+            <li><BookOpen aria-hidden="true" /><div><strong>Learn by doing</strong><small>Connect each concept to practical problems.</small></div></li>
+            <li><CheckCircle2 aria-hidden="true" /><div><strong>See your progress</strong><small>Complete checkpoints and keep moving forward.</small></div></li>
+          </ol>
+        </header>
       <JourneyPanel
         questions={questions}
         onOpenQuestion={(slug) => navigate(`/career-prep/solve/${slug}`)}
       />
+      </main>
     </div>
   );
 };

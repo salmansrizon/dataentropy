@@ -1,12 +1,13 @@
+import LottieAnimation from '@/components/LottieAnimation';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { postSignInTarget } from '@/lib/authRouting';
 import { Lock, Mail } from 'lucide-react';
 
@@ -71,11 +72,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-4">
-      <Card className="w-full max-w-md">
+    <div className="auth-layout">
+      <div className="auth-story">
+        <Link to="/">DataEntropy</Link>
+        <h2>Your next chapter starts with practice.</h2>
+        <p>Sign in to keep your learning progress, return to your projects, and continue building practical data skills.</p>
+        <div aria-hidden="true">
+          <LottieAnimation src="/animations/data-insights.json" loop={false} className="hidden md:block h-56 w-64" />
+        </div>
+      </div>
+      <Card className="auth-panel w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Admin Portal</CardTitle>
-          <CardDescription>Sign in to manage your portfolio</CardDescription>
+          <h1 className="text-2xl font-bold">Welcome to DataEntropy</h1>
+          <CardDescription>Sign in or create your account to continue</CardDescription>
         </CardHeader>
         
         <Tabs defaultValue="signin" className="w-full">

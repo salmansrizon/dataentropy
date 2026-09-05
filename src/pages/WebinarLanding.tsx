@@ -144,7 +144,7 @@ const WebinarLanding = () => {
             <div className="relative z-10 pt-32 pb-20 max-w-6xl mx-auto px-6">
 
                 {/* HERO SECTION - Aligned with Index Hero */}
-                <section className="grid lg:grid-cols-2 gap-16 items-center mb-24">
+                <section className="grid lg:grid-cols-2 gap-10 items-center mb-16">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -156,7 +156,7 @@ const WebinarLanding = () => {
                                 <Zap className="h-3 w-3 animate-pulse" />
                                 {webinar.is_free ? 'Free Live Session' : 'Exclusive Masterclass'}
                             </Badge>
-                            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
+                            <h1 className="text-4xl sm:text-5xl lg:text-5xl font-black leading-[1.1] tracking-tight">
                                 <span className="text-primary">
                                     {webinar.content_blocks?.find((b: any) => b.type === 'hero')?.title || webinar.title}
                                 </span>
@@ -497,7 +497,7 @@ const WebinarLanding = () => {
                 ))}
 
                 {/* Final CTA Area */}
-                <section className="relative rounded-[64px] overflow-hidden bg-primary p-12 md:p-24 text-center text-primary-foreground mb-32 group">
+                <section className="relative rounded-3xl overflow-hidden bg-primary p-6 sm:p-12 md:p-16 text-center text-primary-foreground mb-32 group">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent-foreground/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
 

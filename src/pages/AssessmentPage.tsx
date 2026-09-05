@@ -121,7 +121,7 @@ const AssessmentPage = () => {
             <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-primary/10">
               <Timer className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-extrabold">Final assessment</h1>
+            <h1 className="page-heading text-2xl font-bold">Final assessment</h1>
             <p className="mb-6 text-muted-foreground">{journey?.title ?? 'Journey'}</p>
 
             <Card className="mb-6 text-left">

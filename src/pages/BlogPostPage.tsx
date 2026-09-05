@@ -95,7 +95,7 @@ const BlogPostPage = () => {
           )}
 
           <div className="prose prose-lg dark:prose-invert max-w-none">
-            <h1 className="text-4xl font-bold text-foreground mb-4">{blog.title}</h1>
+            <h1 className="page-heading text-3xl sm:text-4xl font-bold text-foreground">{blog.title}</h1>
             <div className="flex items-center text-muted-foreground mb-8">
               <time dateTime={blog.created_at}>
                 {new Date(blog.created_at).toLocaleDateString('en-US', {

@@ -126,7 +126,7 @@ const PublicProfilePage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto max-w-3xl space-y-6 px-4 pb-20 pt-28">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="page-heading flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold">{profile.display_name}</h1>
             <p className="text-muted-foreground">

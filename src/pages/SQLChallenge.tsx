@@ -469,7 +469,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
 
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
+    <div className="workspace-shell flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
       </div>

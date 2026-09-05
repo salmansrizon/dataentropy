@@ -97,13 +97,13 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
     ? { role: preferredRole, level: preferredLevel, time: preferredTime }
     : null;
   const recommendation = useMemo(() => preferences ? recommendLearningPlan(preferences, journeys) : null, [preferences, journeys]);
-  const recommendedJourney = recommendation?.journey ?? undefined;
+  const recommendedJourney = journeys.find((candidate) => candidate.id === recommendation?.journey?.id);
   const { pool: recommendedPool } = useJourneyQuestionPool(recommendedJourney?.id);
   const orderedJourneys = recommendedJourney
     ? [recommendedJourney, ...journeys.filter((candidate) => candidate.id !== recommendedJourney.id)]
     : journeys;
   const [showSwitcher, setShowSwitcher] = useState(false);
-  const [showPlan, setShowPlan] = useState(false);
+  const [showPlan, setShowPlan] = useState(true);
 
   useEffect(() => {
     if (!preferences || !session?.user?.id || !recommendation) return;
@@ -132,16 +132,6 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   // is conditional.
   return (
     <section className="container max-w-7xl mx-auto px-4 pb-4">
-      {daily?.question && (
-        <motion.button initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          onClick={() => onOpenQuestion(daily.question!.slug)}
-          className="mb-6 flex min-h-16 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left shadow-card transition-colors hover:bg-primary/10"
-        >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><CalendarDays className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-primary">Do now · Today&apos;s question</span><span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span><span className="block truncate text-xs text-muted-foreground">{daily.question.industry} · {daily.question.difficulty}</span></span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </motion.button>
-      )}
       {journeys.length === 0 ? null : journey ? (
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -249,37 +239,64 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="mb-6 bg-primary/5 border-primary/20">
-          <CardContent className="p-8 text-center">
+        <Card className="path-catalog">
+          <CardContent className="p-8">
             <p className="text-sm font-bold text-primary">{recommendedJourney ? 'Your recommended journey' : 'Choose a journey'}</p>
-            <h2 className="mb-2 mt-1 text-2xl font-extrabold">{recommendedJourney?.title ?? 'What are you working toward?'}</h2>
+            <h2 className="mb-2 mt-1 text-2xl font-extrabold">{recommendedJourney?.title ?? 'Choose the work you want to do.'}</h2>
             <p className="text-sm text-muted-foreground mb-4">
               {recommendedJourney
                 ? `Built for your ${preferredRole} goal: ${recommendation?.sessionsPerWeek} focused sessions of about ${recommendation?.minutesPerSession} minutes, starting with ${recommendation?.difficulty.toLowerCase()} practice.`
-                : 'One question. Skip it and browse — nothing is locked.'}
+                : 'Explore the paths below. You can change direction later without losing completed topic progress.'}
             </p>
             {recommendedJourney && recommendation && (
-              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-5 flex max-w-lg flex-wrap justify-center gap-2 text-xs font-semibold">
+              <motion.div initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex max-w-lg flex-wrap gap-2 text-xs font-semibold">
                 <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary"><Clock3 className="mr-1 inline h-3.5 w-3.5" />{recommendation.sessionsPerWeek} sessions/week</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">{recommendation.startingMode.replace('-', ' ')}</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">Start at {recommendation.difficulty}</span>
               </motion.div>
             )}
-            <div className="flex flex-wrap justify-center gap-2">
-              {orderedJourneys.map((j) => (
-                <Button
-                  key={j.id}
-                  className="rounded-full"
-                  variant={recommendedJourney && j.id !== recommendedJourney.id ? 'outline' : 'default'}
-                  disabled={enrol.isPending}
-                  onClick={() => recommendedJourney?.id === j.id ? startRecommendation() : enrol.mutate(j.id)}
-                >
-                  {recommendedJourney?.id === j.id ? `Start first ${recommendation?.difficulty.toLowerCase()} question` : j.title}
-                </Button>
+            <div className="path-options">
+              {orderedJourneys.map((j, index) => (
+                <button key={j.id} className="path-option" disabled={enrol.isPending}
+                  onClick={() => recommendedJourney?.id === j.id ? startRecommendation() : enrol.mutate(j.id)}>
+                  <span className="path-option-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                  <span><span className="path-option-title">{j.title}</span>
+                    <span className="path-option-description">{j.description || j.goal || 'Build your skills through focused topics, practice, and checkpoints.'}</span>
+                  </span>
+                  <span className="path-option-action">{recommendedJourney?.id === j.id ? 'Start recommended path' : 'Start path'}<ChevronRight className="h-4 w-4" aria-hidden="true" /></span>
+                </button>
               ))}
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {journey && plan.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <button className="mb-2 flex min-h-11 w-full items-center justify-between gap-2 text-left" onClick={() => setShowPlan((value) => !value)} aria-expanded={showPlan} aria-controls="journey-timeline">
+              <h3 className="text-sm font-bold text-muted-foreground">
+                Your plan
+              </h3>
+              <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                {plan.reduce((n, r) => n + (r.duration_weeks ?? 0), 0)} weeks total
+                <ChevronDown className={`h-4 w-4 transition-transform ${showPlan ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+            <AnimatePresence initial={false}>{showPlan && <motion.div id="journey-timeline" initial={reduceMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}><JourneyTimeline plan={plan} currentWeek={journeyPosition(plan, enrolment?.started_at).week} journeySlug={journey.slug} /></motion.div>}</AnimatePresence>
+          </CardContent>
+        </Card>
+      )}
+
+      {daily?.question && (
+        <motion.button initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          onClick={() => onOpenQuestion(daily.question!.slug)}
+          className="mb-6 flex min-h-16 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left shadow-card transition-colors hover:bg-primary/10"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><CalendarDays className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-primary">Do now · Today&apos;s question</span><span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span><span className="block truncate text-xs text-muted-foreground">{daily.question.industry} · {daily.question.difficulty}</span></span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </motion.button>
       )}
 
       {dueReviews.length > 0 && (
@@ -301,9 +318,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
         </div>
       )}
 
-      <LearnerRhythmCard initialGoal={recommendation?.sessionsPerWeek ?? 2} dueReviewCount={dueReviews.length} />
 
-      <ClaimProfileCard />
 
       {/* The other way in. A learner with a screening next week wants to drill
           questions, not enrol in a 12-week plan — so the choice is explicit
@@ -364,23 +379,12 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
         </div>
       )}
 
-      {journey && plan.length > 0 && (
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <button className="mb-2 flex min-h-11 w-full items-center justify-between gap-2 text-left" onClick={() => setShowPlan((value) => !value)} aria-expanded={showPlan} aria-controls="journey-timeline">
-              <h3 className="text-sm font-bold text-muted-foreground">
-                Your plan
-              </h3>
-              <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                {plan.reduce((n, r) => n + (r.duration_weeks ?? 0), 0)} weeks total
-                <ChevronDown className={`h-4 w-4 transition-transform ${showPlan ? 'rotate-180' : ''}`} />
-              </span>
-            </button>
-            <AnimatePresence initial={false}>{showPlan && <motion.div id="journey-timeline" initial={reduceMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}><JourneyTimeline plan={plan} currentWeek={journeyPosition(plan, enrolment?.started_at).week} journeySlug={journey.slug} /></motion.div>}</AnimatePresence>
-          </CardContent>
-        </Card>
-      )}
 
+      <details className="path-extras">
+        <summary>Your weekly rhythm and profile</summary>
+        <LearnerRhythmCard initialGoal={recommendation?.sessionsPerWeek ?? 2} dueReviewCount={dueReviews.length} />
+        <ClaimProfileCard />
+      </details>
       <div className="mb-3 mt-8">
         <h3 className="text-sm font-bold text-muted-foreground">Go deeper when it helps</h3>
         <p className="mt-1 text-sm text-muted-foreground">Optional courses, live sessions, and resources matched to your current journey.</p>

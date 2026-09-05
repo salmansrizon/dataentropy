@@ -1,0 +1,28 @@
+/* Public pages share the approved homepage's spacing, ink and quiet surfaces. */
+.page-intro {
+  display: grid; grid-template-columns: minmax(0, 1fr) 240px; align-items: center;
+  gap: 40px; margin-bottom: 40px; padding: 36px 40px;
+  border: 1px solid hsl(var(--border) / .7); border-radius: 24px;
+  background: linear-gradient(115deg, hsl(var(--card)), hsl(var(--primary) / .06));
+}
+.page-eyebrow { margin-bottom: 14px; color: hsl(var(--primary)); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.page-intro h1 { font-size: clamp(30px, 3.2vw, 46px); line-height: 1.16; max-width: 24ch; }
+.page-description { margin-top: 18px; max-width: 58ch; font-size: 16px; line-height: 1.75; color: hsl(var(--muted-foreground)); }
+.page-intro-visual { height: 200px; }
+.page-heading { padding: 24px 0 28px; border-bottom: 1px solid hsl(var(--border)); margin-bottom: 28px; }
+:where(body:not(.admin-context)) [data-ui="panel"] { box-shadow: var(--shadow-card); }
+:where(body:not(.admin-context)) a:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 4px; border-radius: 6px; }
+.auth-layout { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1fr) minmax(320px,440px); align-items: center; gap: 64px; max-width: 1120px; margin: auto; padding: 48px 24px; }
+.auth-story h2 { font-size: clamp(32px,4vw,52px); line-height: 1.15; margin-top: 28px; }
+.auth-story p { max-width: 42ch; line-height: 1.75; color: hsl(var(--muted-foreground)); margin-top: 20px; }
+.auth-story a { font-size: 22px; font-weight: 700; color: hsl(var(--primary)); }
+.auth-panel { padding: 20px; }
+.workspace-shell .site-nav { top: 0; left: 0; right: 0; border-radius: 0; }
+.workspace-shell h1 { font-style: normal; text-transform: none; }
+@media (max-width: 767px) {
+  .page-intro { grid-template-columns: minmax(0,1fr); gap: 0; padding: 24px; margin-bottom: 28px; border-radius: 20px; }
+  .page-intro-visual { height: 130px; width: 180px; justify-self: end; }
+  .page-description { font-size: 15px; }
+  .auth-layout { grid-template-columns: minmax(0,1fr); gap: 28px; padding: 28px 20px; }
+  .auth-panel { padding: 8px; }
+}

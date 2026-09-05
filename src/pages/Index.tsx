@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import "@/home-proposal.css";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, CalendarCheck, CheckCircle2, Database, GraduationCap, Map, Route, ShieldCheck, Sparkles, Target, Timer, UserRound, Users, Wrench } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarCheck, CheckCircle2, Database, GraduationCap, Map, Route, ShieldCheck, Target, Timer, UserRound, Users, Wrench } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import LottieAnimation from "@/components/LottieAnimation";
 import LearningHeroVisual from "@/components/LearningHeroVisual";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,41 +63,48 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="home-proposal min-h-screen bg-background">
       <Navbar />
       <main id="main-content">
-        <section className="relative overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pb-24 sm:pt-36">
-          <div className="relative mx-auto grid min-w-0 max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-            <motion.div className="min-w-0" initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary"><Sparkles className="h-4 w-4" aria-hidden="true" /> Practical learning for data careers</div>
-              <h1 className="max-w-4xl text-4xl font-extrabold leading-[1.07] tracking-tight sm:text-6xl lg:text-7xl">Build the data skills your <span className="text-primary">next role needs.</span></h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">Get a focused plan, learn through worked examples, then prove each skill with realistic practice questions—with no sign-up required to begin.</p>
+        <section className="home-hero">
+          <div className="home-hero-layout">
+            <motion.div className="home-hero-copy" initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+              <p className="home-eyebrow">Practical data skills. Real career impact.</p>
+              <h1>Build practical data skills<br className="hidden xl:block" /> for your <span className="text-primary">next career role</span></h1>
+              <p className="home-hero-description">Hands-on learning in SQL, analytics, and AI tools.<br />Focused lessons. Real practice. A clear next step.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className="min-h-12 rounded-full px-7 text-base shadow-card" asChild><a href="#skill-plan">Get my free skill plan <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></a></Button>
-                <Button size="lg" variant="outline" className="min-h-12 rounded-full px-7 text-base text-foreground" asChild><Link to="/career-prep">Try a real question</Link></Button>
+                <Button size="lg" className="home-start" asChild><a href="#skill-plan">Start Learning Today <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></a></Button>
               </div>
               <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground">
                 {["Start anonymously", "Practice with feedback", "Keep your progress"].map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success-strong" aria-hidden="true" />{item}</span>)}
               </div>
             </motion.div>
+            <svg className="home-growth" viewBox="0 0 300 180" fill="none" aria-hidden="true">
+              <motion.path d="M8 166 C40 163 50 132 74 132 S117 126 145 92 S183 103 200 87 S250 72 287 20" stroke="currentColor" strokeWidth="2" initial={reduceMotion ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4 }} />
+              <path d="m279 24 8-4-1 9" stroke="currentColor" strokeWidth="2" />
+              {[[74,132], [145,92], [200,87], [246,62]].map(([cx,cy]) => <circle key={cx} cx={cx} cy={cy} r="3.5" fill="currentColor" />)}
+            </svg>
             <LearningHeroVisual />
           </div>
         </section>
 
-        <section className="px-4 pb-16 sm:px-6 sm:pb-24" aria-label="Why learners choose DataEntropy">
+        <section className="home-values" aria-label="Why learners choose DataEntropy">
           <div className="mx-auto grid max-w-6xl gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 lg:grid-cols-4">
             {valueProps.map(([Icon, label, detail]) => <div key={label} className="flex items-center gap-3 px-3 py-3 sm:px-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><Icon className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="text-sm font-bold">{label}</p><p className="text-xs text-muted-foreground">{detail}</p></div></div>)}
           </div>
         </section>
 
-        <section className="px-4 pb-16 sm:px-6 sm:pb-24" aria-labelledby="learning-flow-heading">
-          <div className="mx-auto max-w-7xl"><div className="max-w-2xl"><p className="text-sm font-bold text-primary">A clearer way forward</p><h2 id="learning-flow-heading" className="mt-3 text-3xl font-extrabold sm:text-5xl">From intention to evidence.</h2><p className="mt-4 text-lg leading-8 text-muted-foreground">Every path keeps the next useful action visible, so learning stays calm and practical.</p></div>
+        <section className="home-flow" aria-labelledby="learning-flow-heading">
+          <div className="mx-auto max-w-7xl"><div><h2 id="learning-flow-heading">A better way to learn data</h2></div>
             <ol className="mt-10 grid gap-4 md:grid-cols-4">
               {learningFlow.map(([Icon, title, detail], index) => <li key={title} className="relative border-t border-border pt-5 md:border-t-0 md:border-l md:pl-5"><span className="text-xs font-bold text-primary">0{index + 1}</span><Icon className="mt-4 h-6 w-6 text-primary" aria-hidden="true" /><h3 className="mt-4 text-xl font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>{index < learningFlow.length - 1 ? <ArrowRight className="absolute right-3 top-6 hidden h-4 w-4 text-primary/50 md:block" aria-hidden="true" /> : null}</li>)}
             </ol>
           </div>
         </section>
 
+        <div className="home-flow-wave" aria-hidden="true">
+          <LottieAnimation src="/animations/learning-journey.json" className="h-24 w-full" />
+        </div>
         <section id="skill-plan" className="scroll-mt-24 bg-secondary/70 px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="skill-plan-heading">
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>

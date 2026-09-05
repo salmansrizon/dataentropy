@@ -420,7 +420,7 @@ export default function CourseDetails() {
     <div className="min-h-screen bg-background pb-20">
       <Navbar />
 
-      <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
 
           <div className="w-full lg:w-[65%]">
@@ -441,7 +441,7 @@ export default function CourseDetails() {
               </Badge>
             )}
 
-            <h1 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
+            <h1 className="page-heading text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
               {course.title}
             </h1>
 

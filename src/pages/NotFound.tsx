@@ -21,13 +21,13 @@ const NotFound = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div
         className={`text-center max-w-2xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       >
         {/* Animated 404 */}
         <div className="relative mb-8">
-          <h1 className="text-8xl md:text-9xl font-black text-primary animate-pulse">
+          <h1 className="text-7xl md:text-8xl font-bold text-primary">
             404
           </h1>
         </div>
@@ -46,7 +46,7 @@ const NotFound = () => {
         {/* Illustration */}
         <div className="mb-8 flex justify-center">
           <LottieAnimation
-            src="https://assets5.lottiefiles.com/packages/lf20_kji3m1gf.json"
+            src="/animations/roadmap-journey.json" loop={false}
             className="w-72 h-72"
           />
         </div>

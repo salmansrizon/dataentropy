@@ -42,7 +42,7 @@ const VerifyCertificatePage = () => {
           <>
             <Card className={valid ? 'border-success/40' : 'border-danger/40'}>
               <CardContent className="p-8">
-                <div className="mb-6 flex items-center gap-3">
+                <div className="page-heading flex items-center gap-3">
                   {valid ? (
                     <>
                       <ShieldCheck className="h-8 w-8 text-success" />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CardGridSkeleton } from '@/components/ui/skeletons';
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import LearningDashboardPreview from "@/components/LearningDashboardPreview";
+import LottieAnimation from "@/components/LottieAnimation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,7 +159,7 @@ export default function CoursesPage() {
               </div>
             </div>
             <div className="hidden lg:flex justify-center">
-              <LearningDashboardPreview />
+              <LottieAnimation src="/animations/data-insights.json" className="w-full max-w-md aspect-square" />
             </div>
           </div>
         </div>

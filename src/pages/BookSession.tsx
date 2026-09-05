@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { format, addMinutes } from "date-fns";
 import Navbar from "@/components/Navbar";
 import ScrollReveal from "@/components/ScrollReveal";
-import LottieAnimation from "@/components/LottieAnimation";
+import PageIntro from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -125,18 +125,7 @@ const BookSession = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-24 pb-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal direction="up">
-          <div className="mb-10 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-8">
-            <LottieAnimation
-              src="/animations/booking-schedule.json"
-              className="w-44 h-44 md:w-56 md:h-56 shrink-0"
-            />
-            <div className="text-center md:text-left">
-              <h1 className="text-4xl font-bold text-foreground mb-3">Book a Private Session</h1>
-              <p className="text-lg text-muted-foreground">Schedule your 1-on-1 consultation session</p>
-            </div>
-          </div>
-        </ScrollReveal>
+        <PageIntro eyebrow="Learn with a practitioner" title="Book a Private Session" description="Bring your project, interview preparation, or career questions. Choose a session and a time that works for you." animation="/animations/booking-schedule.json" />
 
         {/* Header omitted from steps rendering because it's a single form now */}
 

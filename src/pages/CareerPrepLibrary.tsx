@@ -1,3 +1,4 @@
+import PageIntro from '@/components/PageIntro';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -105,14 +106,7 @@ const CareerPrepLibrary = () => {
           <Link to="/career-prep"><ArrowLeft className="h-4 w-4" /> Career Prep</Link>
         </Button>
 
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-          {scopedJourney ? `${scopedJourney.title} practice` : 'Practice Library'}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          {scopedJourney
-            ? 'Every question and case study in your plan, in any order.'
-            : 'Every question and case study, in any order. No Journey required.'}
-        </p>
+        <PageIntro eyebrow="Build confidence through practice" title={scopedJourney ? `${scopedJourney.title} practice` : 'Practice Library'} description={scopedJourney ? 'Every question and case study in your plan, in any order.' : 'Explore SQL, Python, and business case studies. Filter by skill and difficulty to find your next challenge.'} />
         {scopedJourney && (
           <button
             onClick={() => setParams({})}

@@ -139,10 +139,10 @@ const RoadmapDetailPage = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-3 sm:px-4">
+      <div className="pt-28 sm:pt-28 pb-12 sm:pb-16 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-6 sm:mb-8">
+          <div className="page-heading">
             <Link to="/roadmaps" className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-primary mb-3 sm:mb-4 transition-colors">
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" /> All Roadmaps
             </Link>

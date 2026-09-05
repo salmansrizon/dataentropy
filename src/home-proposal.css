@@ -1,0 +1,59 @@
+/* Approved composition. Homepage positioning never leaks into admin. */
+.home-proposal { --primary: 255 54% 43%; --primary-hover: 255 54% 36%; --primary-foreground: 0 0% 100%; }
+.dark .home-proposal { --primary: 251 88% 72%; --primary-foreground: 245 30% 10%; }
+.home-proposal > nav { position: absolute; top: 20px; left: max(24px, calc((100% - 1404px) / 2)); right: max(24px, calc((100% - 1404px) / 2)); border-radius: 16px; height: 72px; }
+.home-proposal > nav > div:first-child { max-width: none; }
+.home-proposal > nav > div:first-child > div { height: 72px; }
+.home-proposal > nav a.font-display { color: hsl(var(--foreground)); font-size: 21px; display: flex; align-items: center; gap: 9px; }
+.home-hero { padding: 92px 24px 0; }
+.home-hero-layout { position: relative; max-width: 1404px; margin: auto; display: grid; grid-template-columns: 55% 45%; min-height: 546px; }
+.home-hero-copy { z-index: 1; padding: 70px 28px 100px 34px; }
+.home-eyebrow { color: hsl(var(--primary)); font-size: 14px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 20px; }
+.home-hero-copy h1 { font-size: clamp(36px, 3.4vw, 52px); font-weight: 700; line-height: 1.18; letter-spacing: -.035em; }
+.home-hero-description { margin-top: 20px; font-size: 16px; line-height: 26px; color: hsl(var(--muted-foreground)); }
+.home-hero-copy .home-start { border-radius: 9px; font-size: 14px; height: 44px; min-height: 44px; padding: 0 20px; }
+.home-hero-copy > div:last-child { margin-top: 30px; font-size: 12px; gap: 20px; }
+.home-hero-copy > div:last-child svg { color: hsl(var(--primary)); }
+.home-hero-portrait { overflow: hidden; height: 546px; }
+.home-hero-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.home-growth { position: absolute; width: 290px; height: 180px; left: 34%; bottom: 45px; color: hsl(var(--primary) / .55); pointer-events: none; }
+.home-values { position: relative; z-index: 2; max-width: 1414px; margin: -58px auto 0; padding: 0 24px; }
+.home-values > div { max-width: none; min-height: 112px; box-shadow: none; padding: 16px 30px; }
+.home-values > div > div { position: relative; }
+.home-values > div > div + div::before { content: ''; position: absolute; left: 0; height: 48px; width: 1px; background: hsl(var(--border)); }
+.home-values span { width: 58px; height: 58px; }
+.home-values span svg { width: 26px; height: 26px; }
+.home-values p:last-child { line-height: 20px; margin-top: 4px; }
+.home-flow { max-width: 1390px; margin: 28px auto 0; padding: 0 24px; }
+.home-flow > div { max-width: none; }
+.home-flow h2 { text-align: center; font-size: 23px; font-weight: 600; }
+.home-flow ol { margin-top: 20px; gap: 52px; }
+.home-flow li { border: 1px solid hsl(var(--border) / .5); border-radius: 14px; background: hsl(var(--card) / .8); padding: 24px 20px 24px 112px; min-height: 172px; box-shadow: 0 2px 2px hsl(var(--scrim) / .03); }
+.home-flow li > span { display: inline-block; border-radius: 8px; background: hsl(var(--primary) / .08); padding: 1px 8px; }
+.home-flow li > svg:first-of-type { position: absolute; left: 24px; top: 38px; margin: 0; width: 68px; height: 68px; padding: 14px; border-radius: 16px; background: hsl(var(--primary) / .09); }
+.home-flow li h3 { font-size: 14px; margin-top: 10px; }
+.home-flow li p { font-size: 12px; line-height: 19px; }
+.home-flow li > svg:last-child { right: -40px; top: 62px; width: 32px; height: 20px; color: hsl(var(--primary)); }
+.home-flow-wave { width: 75%; max-width: 1000px; height: 110px; margin: 12px auto 0; }
+@media (max-width: 1100px) {
+  .home-flow ol { gap: 22px; }
+  .home-flow li { padding: 22px; }
+  .home-flow li > svg:first-of-type { position: static; width: 44px; height: 44px; padding: 8px; margin-top: 12px; }
+  .home-flow li > svg:last-child { display: none; }
+  .home-values > div { padding: 12px; }
+}
+@media (max-width: 767px) {
+  .home-proposal > nav { left: 12px; right: 12px; top: 12px; }
+  .home-hero { padding: 92px 16px 0; }
+  .home-hero-layout { display: flex; flex-direction: column; }
+  .home-hero-copy { padding: 32px 8px; }
+  .home-hero-copy h1 { font-size: 36px; }
+  .home-hero-portrait { height: 390px; border-radius: 16px; }
+  .home-growth { display: none; }
+  .home-values { margin-top: -20px; padding: 0 24px; }
+  .home-values > div > div + div::before { display: none; }
+  .home-flow { padding: 0 24px; }
+  .home-flow ol { grid-template-columns: 1fr; gap: 14px; }
+  .home-flow li { min-height: 140px; padding-left: 100px; }
+  .home-flow li > svg:first-of-type { position: absolute; left: 24px; top: 35px; }
+}

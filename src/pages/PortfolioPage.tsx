@@ -1,3 +1,4 @@
+import PageIntro from '@/components/PageIntro';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,10 +62,7 @@ const PortfolioPage = () => {
         <Navbar />
         <div className="min-h-screen pt-32 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center mb-12">
-              <Skeleton className="h-14 w-64 mx-auto mb-4" />
-              <Skeleton className="h-6 w-full max-w-2xl mx-auto" />
-            </div>
+            <PageIntro eyebrow="From idea to implementation" title="Practical work. Visible outcomes." description="Explore projects in analytics, engineering, and software. See the tools, decisions, and implementations behind the work." />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Card key={i} className="overflow-hidden border border-border/50">
