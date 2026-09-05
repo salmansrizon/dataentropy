@@ -13,4 +13,4 @@ What shared style and portal boundaries must be isolated so admin retains its pr
 
 ## Answer
 
-Admin now uses `admin-shell`, which restores its established light and dark semantic tokens and Plus Jakarta Sans. `Admin` also applies `admin-context` to `body` while mounted so Radix portals and shared notifications inherit the same palette. Cleanup removes the body scope on unmount. This is the smallest boundary covering the page and its portals; existing admin feature behavior remains unchanged.
+Admin now uses `admin-shell`, which restores its established light and dark semantic tokens and Plus Jakarta Sans. `Admin` also applies `admin-context` to `body` while mounted so Radix portals and shared notifications inherit the same palette, radius, shadows, sidebar tokens, and font. Cleanup removes the body scope on unmount. This is the smallest boundary covering the page and its portals; existing admin feature behavior remains unchanged.
