@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, CalendarCheck, CheckCircle2, Database, GraduationCap, Map, Sparkles, Target, Timer, UserRound } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarCheck, CheckCircle2, Database, GraduationCap, Map, Route, ShieldCheck, Sparkles, Target, Timer, UserRound, Users, Wrench } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import LearningHeroVisual from "@/components/LearningHeroVisual";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { usePageView } from "@/hooks/usePageView";
 import { track, trackOnce } from "@/services/funnel";
 import { motion, useReducedMotion } from "framer-motion";
@@ -24,33 +23,29 @@ const planQuestions = [
   { key: "time", label: "Time each week", icon: Timer, options: WEEKLY_TIME },
 ] as const;
 
+const valueProps = [
+  [Users, "Learner-first", "Clear progress without noise"],
+  [BarChart3, "Career growth", "Skills tied to real work"],
+  [ShieldCheck, "Built by practitioners", "Feedback you can trust"],
+  [Wrench, "Ready to apply", "Practice before pressure"],
+] as const;
+
+const learningFlow = [
+  [Route, "Choose direction", "Pick a role and a realistic weekly pace."],
+  [GraduationCap, "Learn", "Build the idea with focused explanations."],
+  [Database, "Practice", "Solve SQL, Python, and business problems."],
+  [ShieldCheck, "Prove", "Turn practice into visible evidence."],
+] as const;
+
 const Index = () => {
   usePageView("/");
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
-  const [counts, setCounts] = useState<{ courses: number | null; roadmaps: number | null; challenges: number | null }>({ courses: null, roadmaps: null, challenges: null });
   const [preferences, setPreferences] = useState<LearningPreferences>({ role: TARGET_ROLES[0], level: CURRENT_LEVELS[0], time: WEEKLY_TIME[1] });
 
   useEffect(() => {
     void trackOnce('landing-viewed', { event: 'landing_viewed', surface: 'lobby' });
-    let active = true;
-    const fetchCounts = async () => {
-      const [courses, roadmaps, challenges] = await Promise.all([
-        supabase.from("courses").select("id", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("roadmaps").select("id", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("careerprep_questions").select("id", { count: "exact", head: true }).is("parent_id", null),
-      ]);
-      if (active) setCounts({ courses: courses.count ?? 0, roadmaps: roadmaps.count ?? 0, challenges: challenges.count ?? 0 });
-    };
-    void fetchCounts();
-    return () => { active = false; };
   }, []);
-
-  const inventory = useMemo(() => [
-    [counts.challenges, "Practice questions"],
-    [counts.courses, "Published courses"],
-    [counts.roadmaps, "Career roadmaps"],
-  ] as const, [counts]);
   const planPreview = recommendLearningPlan(preferences, []);
 
   const openPlan = () => {
@@ -87,10 +82,18 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="px-4 pb-16 sm:px-6 sm:pb-24" aria-label="Current learning library">
-          <dl className="mx-auto grid max-w-5xl grid-cols-1 gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-3">
-            {inventory.map(([value, label]) => <div key={label} className="rounded-xl bg-secondary px-5 py-4 text-center"><dt className="text-sm font-semibold text-muted-foreground">{label}</dt><dd className="mt-1 text-3xl font-extrabold tabular-nums" aria-label={value === null ? `${label} loading` : undefined}>{value ?? '—'}</dd></div>)}
-          </dl>
+        <section className="px-4 pb-16 sm:px-6 sm:pb-24" aria-label="Why learners choose DataEntropy">
+          <div className="mx-auto grid max-w-6xl gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 lg:grid-cols-4">
+            {valueProps.map(([Icon, label, detail]) => <div key={label} className="flex items-center gap-3 px-3 py-3 sm:px-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><Icon className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="text-sm font-bold">{label}</p><p className="text-xs text-muted-foreground">{detail}</p></div></div>)}
+          </div>
+        </section>
+
+        <section className="px-4 pb-16 sm:px-6 sm:pb-24" aria-labelledby="learning-flow-heading">
+          <div className="mx-auto max-w-7xl"><div className="max-w-2xl"><p className="text-sm font-bold text-primary">A clearer way forward</p><h2 id="learning-flow-heading" className="mt-3 text-3xl font-extrabold sm:text-5xl">From intention to evidence.</h2><p className="mt-4 text-lg leading-8 text-muted-foreground">Every path keeps the next useful action visible, so learning stays calm and practical.</p></div>
+            <ol className="mt-10 grid gap-4 md:grid-cols-4">
+              {learningFlow.map(([Icon, title, detail], index) => <li key={title} className="relative border-t border-border pt-5 md:border-t-0 md:border-l md:pl-5"><span className="text-xs font-bold text-primary">0{index + 1}</span><Icon className="mt-4 h-6 w-6 text-primary" aria-hidden="true" /><h3 className="mt-4 text-xl font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>{index < learningFlow.length - 1 ? <ArrowRight className="absolute right-3 top-6 hidden h-4 w-4 text-primary/50 md:block" aria-hidden="true" /> : null}</li>)}
+            </ol>
+          </div>
         </section>
 
         <section id="skill-plan" className="scroll-mt-24 bg-secondary/70 px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="skill-plan-heading">
