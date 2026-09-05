@@ -19,8 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				display: ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 			},
 			fontSize: { '3xl': ['36px', { lineHeight: '40px' }] },
             spacing: { 'design-1': '4px', 'design-2': '6px', 'design-3': '8px', 'design-4': '10px', 'design-5': '16px', 'design-6': '20px', 'design-7': '24px' },

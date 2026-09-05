@@ -199,6 +199,26 @@
   }
 }
 
+/* Keep established DataEntropy visuals. The learning board adds structure
+   without changing the product's lavender and violet language. */
+@layer base {
+  :root {
+    --background: 246 54% 97%; --foreground: 244 28% 13%; --primary: 251 82% 61%; --primary-hover: 251 77% 53%;
+    --secondary: 248 50% 94%; --secondary-foreground: 244 28% 13%; --muted: 246 31% 93%; --muted-foreground: 245 12% 42%;
+    --accent: 28 95% 58%; --accent-foreground: 0 0% 100%; --border: 247 27% 87%; --input: 247 24% 78%; --ring: 251 82% 61%;
+    --paper: 246 54% 97%; --panel-2: 248 50% 94%; --sidebar-foreground: 244 28% 13%; --sidebar-primary: 251 82% 61%;
+    --sidebar-primary-foreground: 0 0% 100%; --sidebar-accent: 251 82% 61%; --sidebar-accent-foreground: 0 0% 100%; --sidebar-border: 247 27% 87%; --sidebar-ring: 251 82% 61%;
+    --radius: 1rem; --shadow-card: 0 12px 32px rgba(83, 64, 173, 0.10); --shadow-hover: 0 16px 36px rgba(83, 64, 173, 0.18); --shadow-pop: 0 28px 72px rgba(83, 64, 173, 0.20);
+  }
+  .dark {
+    --background: 245 28% 8%; --foreground: 0 0% 98%; --card: 245 24% 12%; --card-foreground: 0 0% 98%; --popover: 245 24% 12%; --popover-foreground: 0 0% 98%;
+    --primary: 251 88% 72%; --primary-foreground: 245 30% 10%; --primary-hover: 251 84% 77%; --secondary: 246 22% 17%; --secondary-foreground: 0 0% 98%;
+    --muted: 246 20% 17%; --muted-foreground: 246 16% 68%; --accent: 31 96% 67%; --accent-foreground: 245 30% 10%; --border: 246 18% 23%; --input: 246 14% 32%; --ring: 251 88% 72%;
+    --paper: 245 28% 8%; --panel: 245 24% 12%; --panel-2: 246 22% 16%; --sidebar-background: 245 26% 10%; --sidebar-foreground: 0 0% 98%; --sidebar-primary: 251 88% 72%; --sidebar-primary-foreground: 245 30% 10%; --sidebar-accent: 251 88% 72%; --sidebar-accent-foreground: 245 30% 10%; --sidebar-border: 246 18% 23%; --sidebar-ring: 251 88% 72%;
+    --radius: 1rem; --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.4); --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.5); --shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.5);
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

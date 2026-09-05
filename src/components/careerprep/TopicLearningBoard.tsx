@@ -146,8 +146,8 @@ export default function TopicLearningBoard({
   );
 
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-primary/20 bg-card shadow-[0_24px_80px_-36px_hsl(var(--primary)/0.42)]" aria-labelledby="learning-board-title">
-      <div className="border-b border-border/70 bg-gradient-to-r from-primary/10 via-card to-secondary/30 px-4 py-4 sm:px-6">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card" aria-labelledby="learning-board-title">
+      <div className="border-b border-border/70 bg-muted/20 px-4 py-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -163,7 +163,7 @@ export default function TopicLearningBoard({
       </div>
 
       <div className="grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <nav className="border-b border-border/70 bg-muted/25 p-3 lg:border-b-0 lg:border-r lg:p-4" aria-label="Topic learning steps">
+        <nav className="border-b border-border/70 bg-muted/10 p-3 lg:border-b-0 lg:border-r lg:p-4" aria-label="Topic learning steps">
           <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
             {steps.map((step, index) => {
               const Icon = step.icon;
@@ -206,7 +206,7 @@ export default function TopicLearningBoard({
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{activeStep.eyebrow}</p>
-              <h3 className="mt-1 text-2xl font-black tracking-tight">{activeStep.label}</h3>
+            <h3 className="mt-1 text-2xl font-black tracking-tight">{activeStep.label}</h3>
             </div>
             {completed.has(activeId) ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Done</Badge> : null}
           </div>
@@ -278,7 +278,7 @@ function LearnStage({ topic, onComplete }: { topic: Topic; onComplete: () => voi
           const active = index === open;
           return (
             <button key={label} type="button" onClick={() => setOpen(index)} aria-expanded={active}
-              className={`min-h-28 rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'border-primary/45 bg-primary/5 shadow-card' : 'border-border bg-card hover:border-primary/25'}`}>
+              className={`min-h-24 rounded-lg border border-transparent p-4 text-left transition-[border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'border-primary/30 bg-primary/5' : 'hover:border-border hover:bg-muted/20'}`}>
               <div className="flex items-center gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl ${active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}><Icon className="h-5 w-5" /></span><span className="font-extrabold">{label}</span></div>
               <AnimatePresence initial={false}>{active ? <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 text-sm leading-6 text-foreground/85">{body}</motion.p> : <p className="mt-3 text-xs text-muted-foreground">Tap to reveal</p>}</AnimatePresence>
             </button>
