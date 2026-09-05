@@ -163,8 +163,8 @@ export default function TopicLearningBoard({
       </div>
 
       <div className="flex flex-col">
-        <nav className="border-b border-border/70 bg-muted/10 p-3 sm:p-4" aria-label="Topic learning steps">
-          <ol className="flex flex-col gap-2">
+        <div className="border-b border-border/70 bg-muted/10 p-3 sm:p-4" aria-label="Topic learning sections">
+          <ol className="divide-y divide-border/70">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const done = completed.has(step.id) || (step.id === 'checkpoint' && isDone);
@@ -177,14 +177,14 @@ export default function TopicLearningBoard({
                     onClick={() => setActiveId(step.id)}
                     aria-label={`Step ${index + 1}: ${step.label}${done ? ', complete' : active ? ', current' : ''}`}
                     aria-current={active ? 'step' : undefined}
-                    className={`group flex min-h-12 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    className={`group flex min-h-16 w-full items-center gap-3 px-3 py-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                       active
-                        ? 'border-primary/50 bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                          ? 'rounded-lg bg-primary text-primary-foreground'
                         : done
-                          ? 'border-success/25 bg-success-soft/50 hover:border-success/45'
+                            ? 'rounded-lg bg-success-soft/50 hover:bg-success-soft'
                           : nextUp
-                            ? 'border-primary/35 bg-primary/10 hover:bg-primary/15'
-                            : 'border-transparent hover:border-border hover:bg-card'
+                            ? 'rounded-lg bg-primary/10 hover:bg-primary/15'
+                            : 'rounded-lg hover:bg-card'
                     }`}
                   >
                     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${active ? 'bg-primary-foreground/15' : done ? 'bg-success/15 text-success' : 'bg-card text-muted-foreground'}`}>
@@ -200,7 +200,7 @@ export default function TopicLearningBoard({
               );
             })}
           </ol>
-        </nav>
+        </div>
 
         <div className="min-w-0 p-4 sm:p-6 lg:p-8">
           <div className="mb-5 flex items-start justify-between gap-4">
