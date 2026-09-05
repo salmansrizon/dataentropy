@@ -162,16 +162,16 @@ export default function TopicLearningBoard({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <nav className="border-b border-border/70 bg-muted/10 p-3 lg:border-b-0 lg:border-r lg:p-4" aria-label="Topic learning steps">
-          <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+      <div className="flex flex-col">
+        <nav className="border-b border-border/70 bg-muted/10 p-3 sm:p-4" aria-label="Topic learning steps">
+          <ol className="flex flex-col gap-2">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const done = completed.has(step.id) || (step.id === 'checkpoint' && isDone);
               const active = step.id === activeId;
               const nextUp = !done && index === steps.findIndex((candidate) => !completed.has(candidate.id));
               return (
-                <li key={step.id} className="shrink-0 lg:w-full">
+                <li key={step.id}>
                   <button
                     type="button"
                     onClick={() => setActiveId(step.id)}
@@ -194,7 +194,7 @@ export default function TopicLearningBoard({
                       <span className="block text-[10px] font-bold uppercase tracking-wider opacity-75">Step {index + 1}</span>
                       <span className="block text-sm font-extrabold">{step.label}</span>
                     </span>
-                    {nextUp && !active ? <span className="ml-auto hidden h-2 w-2 rounded-full bg-primary lg:block" aria-label="Up next" /> : null}
+                    {nextUp && !active ? <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-label="Up next" /> : null}
                   </button>
                 </li>
               );
@@ -202,7 +202,7 @@ export default function TopicLearningBoard({
           </ol>
         </nav>
 
-        <div className="min-w-0 p-4 sm:p-6 lg:min-h-[34rem] lg:p-8">
+        <div className="min-w-0 p-4 sm:p-6 lg:p-8">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{activeStep.eyebrow}</p>
