@@ -9,10 +9,11 @@ const Navbar = () => {
   const location = useLocation()
 
   const navItems = [
-    { name: "Career Prep", href: "/career-prep", highlight: true },
-    { name: "All Courses", href: "/courses" },
-    { name: "Roadmaps", href: "/roadmaps" },
-    { name: "Mentoring", href: "/book-session" },
+    { name: "Courses", href: "/courses" },
+    { name: "Learning Paths", href: "/career-prep" },
+    { name: "For Teams", href: "/book-session" },
+    { name: "Resources", href: "/blog" },
+    { name: "Pricing", href: "/courses" },
   ]
 
   // Helper function to handle hash links
@@ -49,7 +50,7 @@ const Navbar = () => {
               className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-full border border-primary/20 transition-all hover:bg-primary/20 active:scale-95"
             >
               <span className="h-2 w-2 rounded-full bg-success-strong" aria-hidden="true" />
-              <span className="text-xs font-bold leading-none text-primary">Career Prep</span>
+              <span className="text-xs font-bold leading-none text-primary">Learning Paths</span>
             </Link>
           </div>
 
@@ -119,9 +120,10 @@ const Navbar = () => {
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-3 xl:gap-4 shrink-0">
             <ThemeToggle />
+            <Link to="/auth" className="px-2 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">Sign in</Link>
             <Button className="rounded-xl bg-primary font-semibold text-primary-foreground shadow-card transition-colors hover:bg-primary-hover" asChild>
-              <Link to="/book-session">
-                Book Session
+              <Link to="/career-prep">
+                Get Started
               </Link>
             </Button>
           </div>
@@ -193,9 +195,10 @@ const Navbar = () => {
               <div className="flex justify-center">
                 <ThemeToggle />
               </div>
+              <Link to="/auth" onClick={() => setIsOpen(false)} className="block py-2 text-center text-sm font-semibold text-foreground hover:text-primary">Sign in</Link>
               <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-semibold" asChild>
-                <Link to="/book-session" onClick={() => setIsOpen(false)}>
-                  Book Session
+                <Link to="/career-prep" onClick={() => setIsOpen(false)}>
+                  Get Started
                 </Link>
               </Button>
             </div>
