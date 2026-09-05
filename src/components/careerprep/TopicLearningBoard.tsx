@@ -163,41 +163,12 @@ export default function TopicLearningBoard({
       </div>
 
       <div className="flex flex-col">
-        <div className="border-b border-border/70 bg-muted/10 p-3 sm:p-4" aria-label="Topic learning sections">
-          <ol className="divide-y divide-border/70">
+        <div className="border-b border-border/70 px-4 py-3 sm:px-6" aria-label="Learning progress">
+          <ol className="flex items-center gap-1.5 overflow-hidden">
             {steps.map((step, index) => {
-              const Icon = step.icon;
               const done = completed.has(step.id) || (step.id === 'checkpoint' && isDone);
               const active = step.id === activeId;
-              const nextUp = !done && index === steps.findIndex((candidate) => !completed.has(candidate.id));
-              return (
-                <li key={step.id}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveId(step.id)}
-                    aria-label={`Step ${index + 1}: ${step.label}${done ? ', complete' : active ? ', current' : ''}`}
-                    aria-current={active ? 'step' : undefined}
-                    className={`group flex min-h-16 w-full items-center gap-3 px-3 py-3 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
-                      active
-                          ? 'rounded-lg bg-primary text-primary-foreground'
-                        : done
-                            ? 'rounded-lg bg-success-soft/50 hover:bg-success-soft'
-                          : nextUp
-                            ? 'rounded-lg bg-primary/10 hover:bg-primary/15'
-                            : 'rounded-lg hover:bg-card'
-                    }`}
-                  >
-                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${active ? 'bg-primary-foreground/15' : done ? 'bg-success/15 text-success' : 'bg-card text-muted-foreground'}`}>
-                      {done ? <Check className="h-4 w-4" aria-hidden="true" /> : <Icon className="h-4 w-4" aria-hidden="true" />}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-bold uppercase tracking-wider opacity-75">Step {index + 1}</span>
-                      <span className="block text-sm font-extrabold">{step.label}</span>
-                    </span>
-                    {nextUp && !active ? <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-label="Up next" /> : null}
-                  </button>
-                </li>
-              );
+              return <li key={step.id} className="flex min-w-0 flex-1 items-center gap-1.5"><span className={`h-1.5 flex-1 rounded-full ${done || active ? 'bg-primary' : 'bg-muted'}`} /><span className="sr-only">Step {index + 1}: {step.label}{done ? ', complete' : active ? ', current' : ''}</span></li>;
             })}
           </ol>
         </div>

@@ -53,18 +53,16 @@ describe('TopicLearningBoard', () => {
     await user.click(screen.getByRole('button', { name: /I understand the idea/i }));
 
     expect(screen.getByRole('heading', { name: 'Explore' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Step 2: Explore/i })).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('progressbar', { name: /17% of board steps complete/i })).toBeInTheDocument();
     expect(window.localStorage.getItem('dataentropy:learning-board:topic-1:v1')).toContain('learn');
   });
 
-  it('requires the recall card to be revealed before recall can be completed', async () => {
+  it('keeps later sections undiscoverable until the current section completes', async () => {
     const user = userEvent.setup();
     render(<TopicLearningBoard {...props} />);
-    await user.click(screen.getByRole('button', { name: /Step 3: Recall/i }));
-
-    const complete = screen.getByRole('button', { name: /I recalled it without notes/i });
-    expect(complete).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: /Explain SQL joins/i }));
-    expect(complete).toBeEnabled();
+    expect(screen.queryByRole('heading', { name: 'Recall' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /I understand the idea/i }));
+    expect(screen.getByRole('heading', { name: 'Explore' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Recall' })).not.toBeInTheDocument();
   });
 });
