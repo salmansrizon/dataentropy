@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarCheck, CheckCircle2, Database, GraduationCap, Map, Sparkles, Target, Timer, UserRound } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import LearningDashboardPreview from "@/components/LearningDashboardPreview";
+import LearningHeroVisual from "@/components/LearningHeroVisual";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +83,7 @@ const Index = () => {
                 {["Start anonymously", "Practice with feedback", "Keep your progress"].map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success-strong" aria-hidden="true" />{item}</span>)}
               </div>
             </motion.div>
-            <LearningDashboardPreview />
+            <LearningHeroVisual />
           </div>
         </section>
 
