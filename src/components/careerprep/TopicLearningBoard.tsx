@@ -273,17 +273,19 @@ function LearnStage({ topic, onComplete }: { topic: Topic; onComplete: () => voi
   return (
     <div>
       <p className="max-w-2xl text-sm leading-6 text-muted-foreground">Tap each splash card to switch the lens. The idea stays compact while you control the depth.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {cards.map(({ label, body, icon: Icon }, index) => {
-          const active = index === open;
-          return (
-            <button key={label} type="button" onClick={() => setOpen(index)} aria-expanded={active}
-              className={`min-h-24 rounded-lg border border-transparent p-4 text-left transition-[border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'border-primary/30 bg-primary/5' : 'hover:border-border hover:bg-muted/20'}`}>
-              <div className="flex items-center gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl ${active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}><Icon className="h-5 w-5" /></span><span className="font-extrabold">{label}</span></div>
-              <AnimatePresence initial={false}>{active ? <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-3 text-sm leading-6 text-foreground/85">{body}</motion.p> : <p className="mt-3 text-xs text-muted-foreground">Tap to reveal</p>}</AnimatePresence>
-            </button>
-          );
-        })}
+      <div className="mt-5 overflow-hidden rounded-xl border border-border/70 bg-muted/10">
+        <div className="flex gap-1 overflow-x-auto border-b border-border/70 p-2" role="tablist" aria-label="Learning lenses">
+          {cards.map(({ label, icon: Icon }, index) => {
+            const active = index === open;
+            return <button key={label} type="button" role="tab" aria-selected={active} onClick={() => setOpen(index)} className={`flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-card hover:text-foreground'}`}><Icon className="h-4 w-4" aria-hidden="true" />{label}</button>;
+          })}
+        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={open} role="tabpanel" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="min-h-32 p-5 sm:p-6">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{cards[open].label}</p>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-foreground/85">{cards[open].body}</p>
+          </motion.div>
+        </AnimatePresence>
       </div>
       <Button className="mt-5 min-h-11 gap-2 rounded-full" onClick={onComplete}>I understand the idea<ArrowRight className="h-4 w-4" /></Button>
     </div>
