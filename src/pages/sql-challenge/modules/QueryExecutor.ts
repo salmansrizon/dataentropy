@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getPGliteInstance } from './PGliteEngine';
+import { executePython } from './PythonExecutor';
 
 // ── QueryExecutor ────────────────────────────────────────────────────────────
 // Internal module: executes SQL queries against PGlite instance.
@@ -10,6 +11,8 @@ export interface QueryResult {
   rows: any[];
   error?: string;
   executionTime?: number;
+  stdout?: string;
+  returnValue?: unknown;
 }
 
 export async function executeQuery(sql: string): Promise<QueryResult> {
@@ -51,9 +54,16 @@ export function useQueryExecutor() {
     }
   };
 
+  const executePythonCode = async (source: string) => {
+    setIsExecuting(true);
+    try { setResults(await executePython(source)); }
+    finally { setIsExecuting(false); }
+  };
+
   return {
     results,
     isExecuting,
     execute,
+    executePython: executePythonCode,
   };
 }
