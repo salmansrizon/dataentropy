@@ -85,6 +85,11 @@ const Admin = () => {
   // "is there a user" is no longer a guard. The panel requires the admin role,
   // checked against the same is_admin() the RLS policies use.
   React.useEffect(() => {
+    document.body.classList.add('admin-context');
+    return () => document.body.classList.remove('admin-context');
+  }, []);
+
+  React.useEffect(() => {
     if (shouldRejectFromAdmin({ hasUser: !!user, isAnonymous: false, adminChecked, isAdmin })) {
       navigate('/auth');
     }
@@ -205,7 +210,7 @@ const Admin = () => {
   );
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-background overflow-hidden">
+    <div className="admin-shell min-h-screen relative flex flex-col bg-background overflow-hidden">
       {/* Background Blur Elements (From Hero) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       </div>

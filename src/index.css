@@ -2,42 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DataEntropy learning system — lavender canvas, quiet white surfaces, decisive violet actions. */
+/* DataEntropy learning system — Geist typography, neutral surfaces, and blue actions. */
 @layer base {
   :root {
     /* Ink & Paper */
-    --background: 246 54% 97%;
-    --foreground: 244 28% 13%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 244 28% 13%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 244 28% 13%;
-    --primary: 251 82% 61%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 251 77% 53%;
-    --secondary: 248 50% 94%;
-    --secondary-foreground: 244 28% 13%;
-    --muted: 246 31% 93%;
-    --muted-foreground: 245 12% 42%;
-    --accent: 28 95% 58%;
-    --accent-foreground: 0 0% 100%;
+    --primary-hover: 221 83% 45%;
+    --secondary: 221 100% 97%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 221 100% 97%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 221 100% 94%;
+    --accent-foreground: 221 83% 35%;
     --destructive: 0 84% 60%;           /* --color-red #ef4444 */
     --destructive-foreground: 0 0% 100%;
-    --border: 247 27% 87%;
-    --input: 247 24% 78%;
-    --ring: 251 82% 61%;
+    --border: 0 0% 85%;
+    --input: 0 0% 60%;
+    --ring: 221 83% 53%;
 
     /* Skill bar colors */
-    --skill-bg: 248 50% 94%;
-    --skill-fill: 251 82% 61%;
+    --skill-bg: 221 100% 97%;
+    --skill-fill: 221 83% 53%;
 
     /* Surfaces */
-    --paper: 246 54% 97%;
+    --paper: 0 0% 100%;
     --panel: 0 0% 100%;
-    --panel-2: 248 50% 94%;
+    --panel-2: 221 100% 97%;
 
     /* Category series palette (shared: site cards + admin charts) */
-    --series-web: 251 82% 61%;
+    --series-web: 221 83% 53%;
     --series-data: 157 100% 36%;        /* green #00b871 */
     --series-career: 24 100% 52%;       /* orange */
     --series-webinar: 333 84% 52%;      /* magenta #ec1e79 */
@@ -90,50 +90,50 @@
     --scrim: 0 0% 0%;
 
     /* Soft shadows (DS: card / modal) */
-    --shadow-card: 0 12px 32px rgba(83, 64, 173, 0.10);
-    --shadow-hover: 0 16px 36px rgba(83, 64, 173, 0.18);
-    --shadow-pop: 0 28px 72px rgba(83, 64, 173, 0.20);
-    --radius: 1rem;
+    --shadow-card: 0 0 0 1px hsl(var(--border));
+    --shadow-hover: 0 0 0 1px hsl(var(--ring));
+    --shadow-pop: 0 16px 48px hsl(var(--scrim) / 0.2);
+    --radius: 0.625rem;
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 244 28% 13%;
-    --sidebar-primary: 251 82% 61%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 251 82% 61%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 247 27% 87%;
-    --sidebar-ring: 251 82% 61%;
+    --sidebar-accent: 221 100% 94%;
+    --sidebar-accent-foreground: 221 83% 35%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 221 83% 53%;
   }
 
-  /* Dark = the DS ink surfaces (#131313 canvas, #1c1c1c cards) */
+  /* Reference design: black canvas, blue-tinted surfaces, neutral text. */
   .dark {
-    --background: 245 28% 8%;
-    --foreground: 0 0% 98%;
-    --card: 245 24% 12%;
-    --card-foreground: 0 0% 98%;
-    --popover: 245 24% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 251 88% 72%;
-    --primary-foreground: 245 30% 10%;
-    --primary-hover: 251 84% 77%;
-    --secondary: 246 22% 17%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 246 20% 17%;
-    --muted-foreground: 246 16% 68%;
-    --accent: 31 96% 67%;
-    --accent-foreground: 245 30% 10%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 90%;
+    --card: 221 45% 6%;
+    --card-foreground: 0 0% 90%;
+    --popover: 221 45% 6%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 221 83% 65%;
+    --primary-foreground: 0 0% 0%;
+    --primary-hover: 221 83% 72%;
+    --secondary: 221 55% 14%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 221 45% 6%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 221 55% 14%;
+    --accent-foreground: 0 0% 90%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 246 18% 23%;
-    --input: 246 14% 32%;
-    --ring: 251 88% 72%;
+    --border: 0 0% 25%;
+    --input: 0 0% 45%;
+    --ring: 221 83% 65%;
 
     /* Surfaces */
-    --paper: 245 28% 8%;
-    --panel: 245 24% 12%;
-    --panel-2: 246 22% 16%;
+    --paper: 0 0% 0%;
+    --panel: 221 45% 6%;
+    --panel-2: 221 55% 14%;
 
     /* Category series palette */
-    --series-web: 251 88% 72%;
+    --series-web: 221 83% 65%;
     --series-data: 150 100% 41%;        /* mint #00d26a pops on ink */
     --series-career: 24 100% 62%;       /* #ff8a3d */
     --series-webinar: 333 84% 58%;
@@ -180,22 +180,22 @@
     --scrim: 0 0% 0%;
 
     /* Skill bar colors */
-    --skill-bg: 0 0% 13%;
-    --skill-fill: 217 100% 63%;
+    --skill-bg: 221 55% 14%;
+    --skill-fill: 221 83% 65%;
 
     /* Shadows */
-    --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.4);
-    --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.5);
-    --shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 0 0 1px hsl(var(--border));
+    --shadow-hover: 0 0 0 1px hsl(var(--ring));
+    --shadow-pop: 0 16px 48px hsl(var(--scrim) / 0.5);
 
-    --sidebar-background: 245 26% 10%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 251 88% 72%;
-    --sidebar-primary-foreground: 245 30% 10%;
-    --sidebar-accent: 251 88% 72%;
-    --sidebar-accent-foreground: 245 30% 10%;
-    --sidebar-border: 246 18% 23%;
-    --sidebar-ring: 251 88% 72%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 221 83% 65%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 221 55% 14%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 221 83% 65%;
   }
 }
 
@@ -208,10 +208,107 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    font-size: 16px;
+    line-height: 24px;
     text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4 {
     @apply font-display font-bold tracking-tight;
+  }
+
+  /* Admin keeps its established visual language while shared surfaces adopt
+     the new design tokens. */
+  .admin-shell {
+    --background: 246 54% 97%;
+    --foreground: 244 28% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 244 28% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 244 28% 13%;
+    --primary: 251 82% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 251 77% 53%;
+    --secondary: 248 50% 94%;
+    --secondary-foreground: 244 28% 13%;
+    --muted: 246 31% 93%;
+    --muted-foreground: 245 12% 42%;
+    --accent: 28 95% 58%;
+    --accent-foreground: 0 0% 100%;
+    --border: 247 27% 87%;
+    --input: 247 24% 78%;
+    --ring: 251 82% 61%;
+    --paper: 246 54% 97%;
+    --panel: 0 0% 100%;
+    --panel-2: 248 50% 94%;
+    --radius: 1rem;
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .dark .admin-shell {
+    --background: 245 28% 8%;
+    --foreground: 0 0% 98%;
+    --card: 245 24% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 245 24% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 251 88% 72%;
+    --primary-foreground: 245 30% 10%;
+    --primary-hover: 251 84% 77%;
+    --secondary: 246 22% 17%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 246 20% 17%;
+    --muted-foreground: 246 16% 68%;
+    --accent: 31 96% 67%;
+    --accent-foreground: 245 30% 10%;
+    --border: 246 18% 23%;
+    --input: 246 14% 32%;
+    --ring: 251 88% 72%;
+    --paper: 245 28% 8%;
+    --panel: 245 24% 12%;
+    --panel-2: 246 22% 16%;
+  }
+
+  body.admin-context {
+    --background: 246 54% 97%;
+    --foreground: 244 28% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 244 28% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 244 28% 13%;
+    --primary: 251 82% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 251 77% 53%;
+    --secondary: 248 50% 94%;
+    --secondary-foreground: 244 28% 13%;
+    --muted: 246 31% 93%;
+    --muted-foreground: 245 12% 42%;
+    --accent: 28 95% 58%;
+    --accent-foreground: 0 0% 100%;
+    --border: 247 27% 87%;
+    --input: 247 24% 78%;
+    --ring: 251 82% 61%;
+  }
+
+  body.admin-context.dark,
+  .dark body.admin-context {
+    --background: 245 28% 8%;
+    --foreground: 0 0% 98%;
+    --card: 245 24% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 245 24% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 251 88% 72%;
+    --primary-foreground: 245 30% 10%;
+    --primary-hover: 251 84% 77%;
+    --secondary: 246 22% 17%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 246 20% 17%;
+    --muted-foreground: 246 16% 68%;
+    --accent: 31 96% 67%;
+    --accent-foreground: 245 30% 10%;
+    --border: 246 18% 23%;
+    --input: 246 14% 32%;
+    --ring: 251 88% 72%;
   }
 }
 

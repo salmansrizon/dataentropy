@@ -82,19 +82,31 @@ _Avoid_: apply promo (ambiguous — names the toggle, not the rule)
 **Question**:
 One row in `careerprep_questions`. Every type of prep content — single, MCQ, case study, mission root or child — is a Question.
 
+**Coding Question**:
+A Question whose solution is executed and validated by the platform. Its language is SQL or Python; existing Questions default to SQL.
+_Avoid_: coding challenge (a Coding Question is the stored content, not the learner's attempt)
+
+**Python Question**:
+A Coding Question whose learner code defines a named function and is checked against hidden test cases in a browser Python Runtime.
+_Avoid_: Python playground, script question
+
+**Python Runtime**:
+The browser-isolated execution environment for Python Questions. It has standard-library Python only, no network, filesystem, package installation, or external service access.
+_Avoid_: Python server, notebook
+
 **Single Question**:
-A standalone SQL coding question (`question_type: 'code'`) solved in the Monaco/PGLite workspace with no parent.
+A standalone Coding Question (`question_type: 'code'`) solved in the Monaco workspace with no parent.
 _Avoid_: coding question, challenge
 
 **MCQ**:
-A multiple-choice Question (`question_type: 'mcq'`) with options A–D and one or more correct options. No SQL execution required to answer. Authors default to single-answer; multi-answer is opt-in.
+A multiple-choice Question (`question_type: 'mcq'`) with options A–D and one or more correct options. No code execution required to answer. Authors default to single-answer; multi-answer is opt-in.
 _Avoid_: quiz, multiple choice question
 
 **Case Study**:
-A SQL Question framed in a localized business scenario (`question_type: 'case_study'`), executed and validated like a Single Question.
+A Coding Question framed in a localized business scenario (`question_type: 'case_study'`), executed and validated like a Single Question.
 
 **Mission**:
-A container Question (`question_type: 'root'`) whose ordered child Questions (linked via `parent_id`) form one continuous investigation — each child builds on the one before (day 1 → day N), all children Single-style code questions **on the same dataset**. A Mission is finished in one sitting; the shared dataset is what makes it one exercise rather than a list. Distinct from a Roadmap, which is a curriculum returned to over weeks.
+A container Question (`question_type: 'root'`) whose ordered child Questions (linked via `parent_id`) form one continuous investigation — each child builds on the one before (day 1 → day N), all children Single-style SQL Questions **on the same dataset**. A Mission is finished in one sitting; the shared dataset is what makes it one exercise rather than a list. Distinct from a Roadmap, which is a curriculum returned to over weeks.
 _Avoid_: mission-based question (a Mission is the container, not one question), track, path
 
 **Visitor Id**:
