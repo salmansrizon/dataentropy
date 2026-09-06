@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Compass, BookOpen, CheckCircle2 } from 'lucide-react';
 import '@/learning-paths.css';
 import Navbar from '@/components/Navbar';
-import portrait from '@/assets/formal.jpg';
 import LottieAnimation from '@/components/LottieAnimation';
 import { useQuestions } from '@/hooks/useCareerPrep';
 import JourneyPanel from '@/components/careerprep/JourneyPanel';
@@ -42,9 +41,9 @@ const CareerPrep = () => {
             <h1>A clear path to your <span className="whitespace-nowrap text-primary">next role.</span></h1>
             <p>Choose a direction. Build the skills through focused lessons and real practice. Pick up where you left off, one useful step at a time.</p>
           </div>
-          <figure className="learning-paths-portrait">
-            <img src={portrait} alt="Salman Sakib, data practitioner" width={896} height={1152} fetchPriority="high" />
-            <figcaption>Practical skills. A human perspective.</figcaption>
+          <figure className="learning-paths-banner">
+            <img src="/images/data-career-learning-banner.jpg" alt="Data analytics workspace with a visual learning path" width={1672} height={941} fetchPriority="high" />
+            <figcaption>Choose a direction. Build practical skills. Keep moving.</figcaption>
           </figure>
           <div className="learning-paths-animation" aria-hidden="true"><LottieAnimation src="/animations/learning-path-stages.json" loop={false} className="h-full w-full" /></div>
           <ol className="learning-paths-route" aria-label="How learning paths work">
