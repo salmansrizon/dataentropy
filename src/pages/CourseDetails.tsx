@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageView } from "@/hooks/usePageView";
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,7 @@ interface CourseContent {
 
 export default function CourseDetails() {
   const { courseId } = useParams();
+  const [searchParams] = useSearchParams();
   usePageView(`/course/${courseId}`);
   const { toast } = useToast();
   const { session } = useAuth();
@@ -124,7 +125,7 @@ export default function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
-  const [openLesson, setOpenLesson] = useState<string>('');
+  const [openLesson, setOpenLesson] = useState<string>(() => searchParams.get('lesson') ?? '');
   const orderedContentIds = sections.flatMap((section) => section.contents ?? []).map((content) => content.id);
   const courseProgress = useCourseProgress(courseId, orderedContentIds);
   const [freeUnlocked, setFreeUnlocked] = useState(false);
@@ -132,10 +133,6 @@ export default function CourseDetails() {
   useEffect(() => {
     if (courseProgress.resumeContentId && !openLesson) setOpenLesson(courseProgress.resumeContentId);
   }, [courseProgress.resumeContentId, openLesson]);
-  useEffect(() => {
-    if (!courseId || !session?.user?.id) return;
-    void (supabase as any).from('course_enrollments').select('id').eq('course_id', courseId).eq('user_id', session.user.id).in('status', ['approved', 'confirmed']).maybeSingle().then(({ data }: any) => setPaidUnlocked(!!data));
-  }, [courseId, session?.user?.id]);
 
   // Cookie helpers for free course unlock tracking
   const getCookie = (name: string) => {
@@ -161,12 +158,11 @@ export default function CourseDetails() {
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
   useEffect(() => {
-    if (courseId) {
-      fetchCourseDetails();
-    }
-  }, [courseId]);
+    if (courseId) void fetchCourseDetails();
+  }, [courseId, session?.user?.id]);
 
   const fetchCourseDetails = async () => {
+    setLoading(true);
     try {
       // 1. Fetch primary course data first (essential for other queries)
       const { data: courseData, error: courseError } = await supabase
@@ -179,7 +175,41 @@ export default function CourseDetails() {
       const cData = courseData as any;
       setCourse(cData);
 
-      // 2. Parallelize all independent secondary metadata queries
+      // Do not ship paid payloads to locked learners. Outlines and free samples
+      // keep the catalog useful without exposing lesson content_data.
+      const isFreeCourse = cData.is_free || (!cData.price && !cData.discounted_price);
+      let hasPaidAccess = false;
+      if (!isFreeCourse && session?.user?.id) {
+        const { data: enrollment, error: enrollmentError } = await (supabase as any)
+          .from("course_enrollments")
+          .select("id")
+          .eq("course_id", courseId)
+          .eq("user_id", session.user.id)
+          .in("status", ["approved", "confirmed"])
+          .maybeSingle();
+        if (enrollmentError) throw enrollmentError;
+        hasPaidAccess = Boolean(enrollment);
+      }
+      setPaidUnlocked(hasPaidAccess);
+
+      const outlineColumns = "id,course_id,section_id,title,description,content_type,is_free,duration_minutes,topics,order_index";
+      const contentResultPromise = isFreeCourse || hasPaidAccess
+        ? supabase.from("course_content").select("*").eq("course_id", courseId).order("order_index")
+        : (async () => {
+            const [outlineResult, sampleResult] = await Promise.all([
+              supabase.from("course_content_outline").select(outlineColumns).eq("course_id", courseId).order("order_index"),
+              supabase.from("course_content").select("*").eq("course_id", courseId).eq("is_free", true).order("order_index"),
+            ]);
+            if (outlineResult.error) {
+              const fallback = await supabase.from("course_content").select(outlineColumns).eq("course_id", courseId).order("order_index");
+              if (fallback.error) throw fallback.error;
+              return { data: [...(fallback.data ?? []), ...(sampleResult.data ?? [])], error: null };
+            }
+            const byId = new Map([...(outlineResult.data ?? []), ...(sampleResult.data ?? [])].map((item: any) => [item.id, item]));
+            return { data: Array.from(byId.values()), error: null };
+          })();
+
+      // Parallelize all independent secondary metadata queries
       const [
         instructorResult,
         reviewsResult,
@@ -205,8 +235,8 @@ export default function CourseDetails() {
         supabase.from("payment_settings").select("*").limit(1).single(),
         // Sections fetch
         supabase.from("course_sections").select("*").eq("course_id", courseId).order("order_index"),
-        // Content fetch
-        supabase.from("course_content").select("*").eq("course_id", courseId).order("order_index"),
+        // Content fetch: full payload only for free/entitled learners
+        contentResultPromise,
         // Related courses fetch
         (async () => {
            // We fire these in parallel internally too
@@ -234,6 +264,7 @@ export default function CourseDetails() {
       setRelatedCourses(relatedResult as Course[]);
 
       // Process sections and content
+      if (contentResult.error) throw contentResult.error;
       const sectionsData = sectionsResult.data || [];
       const contentData = contentResult.data || [];
 
@@ -435,11 +466,19 @@ export default function CourseDetails() {
               </div>
             </div>
 
-            {isFree && (
-              <Badge className="mb-3 inline-flex w-fit items-center gap-2 border-none bg-success-soft px-3 py-1 text-xs font-bold text-success-strong shadow-sm hover:bg-success-soft">
-                FREE
+            <div className="mb-3 flex flex-wrap gap-2">
+              {isFree && (
+                <Badge className="inline-flex w-fit items-center gap-2 border-none bg-success-soft px-3 py-1 text-xs font-bold text-success-strong shadow-sm hover:bg-success-soft">
+                  FREE
+                </Badge>
+              )}
+              <Badge variant="secondary" className="border border-brand-blue/20 bg-card text-brand-blue dark:bg-secondary dark:text-primary">
+                {totalLessons || "—"} lessons
               </Badge>
-            )}
+              <Badge variant="secondary" className="border border-brand-blue/20 bg-card text-brand-blue dark:bg-secondary dark:text-primary">
+                {course.duration_hours ? `${course.duration_hours} hours` : "Self-paced"}
+              </Badge>
+            </div>
 
             <h1 className="page-heading text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
               {course.title}
@@ -786,11 +825,11 @@ export default function CourseDetails() {
                      </div>
                    );
                  })()}
-                 <div className="flex gap-3 mb-6">
+                 <div className="flex gap-3 mb-3">
                     <Button
                       size="lg"
                       className={cn(
-                        "flex-1 h-14",
+                        "flex-1 h-14 rounded-xl bg-brand-blue hover:bg-brand-blue-hover",
                         isFree ? "bg-success hover:bg-success/90 text-success-foreground" : ""
                       )}
                       onClick={() => {
@@ -807,7 +846,7 @@ export default function CourseDetails() {
                         ? courseProgress.hasStarted ? `Continue course · ${completedLessons}/${totalLessons}` : 'Start first lesson'
                         : 'Start course'}
                     </Button>
-                    <Button size="lg" variant="outline" className="w-14 h-14 p-0" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
+                    <Button size="lg" variant="outline" className="w-14 h-14 rounded-xl p-0" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                  </div>
                  {!isFree && !paidUnlocked && sampleContentId && <Button variant="outline" className="mb-6 min-h-12 w-full rounded-full" onClick={() => { setActiveTab('content'); setOpenLesson(sampleContentId); window.setTimeout(() => document.getElementById('course-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}><Play className="mr-2 h-4 w-4" />Try the first lesson free</Button>}
                  <ul className="space-y-4">
@@ -874,6 +913,7 @@ export default function CourseDetails() {
             { key: 'institute_name', label: 'Institute/Organization', placeholder: 'e.g. University/Company', required: true }
           ]}
           submitLabel="Confirm Enrollment"
+          confirmationType="enrollment"
         />
       </div>
     </div>
