@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/services/funnel";
 import { useCourseProgress } from "@/hooks/useCourseProgress";
 import { useAuth } from "@/contexts/AuthContext";
+import { COURSE_ACCESS_STATUSES } from "@/domain/courseEnrollment";
 
 interface Course {
   id: string;
@@ -181,7 +182,7 @@ export default function CourseDetails() {
           .select("id")
           .eq("course_id", courseId)
           .eq("user_id", session.user.id)
-          .in("status", ["approved", "confirmed"])
+          .in("status", [...COURSE_ACCESS_STATUSES])
           .maybeSingle();
         if (enrollmentError) throw enrollmentError;
         hasPaidAccess = Boolean(enrollment);
