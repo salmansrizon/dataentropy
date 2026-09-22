@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageView } from "@/hooks/usePageView";
@@ -157,11 +157,7 @@ export default function CourseDetails() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
-  useEffect(() => {
-    if (courseId) void fetchCourseDetails();
-  }, [courseId, session?.user?.id]);
-
-  const fetchCourseDetails = async () => {
+  const fetchCourseDetails = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch primary course data first (essential for other queries)
@@ -303,7 +299,11 @@ export default function CourseDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, session?.user?.id, toast]);
+
+  useEffect(() => {
+    if (courseId) void fetchCourseDetails();
+  }, [fetchCourseDetails, courseId]);
 
   const contentTypeIcons: Record<string, typeof MonitorPlay> = {
     video: MonitorPlay,
