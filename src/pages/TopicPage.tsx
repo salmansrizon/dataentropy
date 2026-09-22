@@ -91,15 +91,13 @@ const TopicPage = () => {
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.course.title}</span>
                 <span className="mt-2 block text-xs text-muted-foreground">{offers.course.is_free ? 'Free' : `৳${offers.course.price}`}</span>
               </button>
-            ) : null}
-            {offers.ebook ? (
+            ) : offers.ebook ? (
               <button onClick={() => navigate('/career-prep')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><BookDown className="h-4 w-4" />Study material</span>
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.ebook.title}</span>
                 <span className="mt-2 block text-xs text-muted-foreground">Free with your email</span>
               </button>
-            ) : null}
-            {offers.webinar ? (
+            ) : offers.webinar ? (
               <button onClick={() => navigate('/webinars')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><Video className="h-4 w-4" />Live session</span>
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.webinar.title}</span>
@@ -128,7 +126,7 @@ const TopicPage = () => {
       <main className="mx-auto max-w-6xl px-3 pb-10 pt-28 sm:px-5 sm:pt-28">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Button variant="ghost" size="sm" className="min-h-11 gap-1.5 rounded-full text-muted-foreground" onClick={() => navigate('/career-prep')}><ArrowLeft className="h-4 w-4" />Career Prep</Button>
-          {nav?.journey && nav.index >= 0 ? <span className="text-xs text-muted-foreground">{nav.journey.title} · topic {nav.index + 1} of {nav.sequence.length}</span> : null}
+
         </div>
 
         <div className="page-heading flex flex-wrap items-center gap-3 px-1">
@@ -138,6 +136,7 @@ const TopicPage = () => {
 
         <TopicLearningBoard topic={topic} sections={sections} practice={practice} caseStudies={caseStudies}
           isDone={isDone} hasCheckpoint={!!checkpoint} toolkit={toolkit} nextTopic={nav?.next}
+          routeContext={nav?.journey && nav.index >= 0 ? `${nav.journey.title} · Topic ${nav.index + 1} of ${nav.sequence.length}` : 'Career Prep · Guided Topic'}
           onOpenQuestion={(questionSlug) => navigate(`/career-prep/solve/${questionSlug}`)}
           onOpenCheckpoint={() => setCheckpointOpen(true)}
           onOpenNext={() => nav?.next && navigate(`/career-prep/topic/${nav.next.slug}`)} />

@@ -33,6 +33,7 @@ const props = {
   hasCheckpoint: true,
   toolkit: <p>Reference toolkit</p>,
   nextTopic: null,
+  routeContext: 'Data Analyst · Topic 1 of 8',
   onOpenQuestion: vi.fn(),
   onOpenCheckpoint: vi.fn(),
   onOpenNext: vi.fn(),
@@ -53,16 +54,15 @@ describe('TopicLearningBoard', () => {
     await user.click(screen.getByRole('button', { name: /I understand the idea/i }));
 
     expect(screen.getByRole('heading', { name: 'Explore' })).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: /17% of board steps complete/i })).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: /17% of reading sequence complete/i })).toBeInTheDocument();
     expect(window.localStorage.getItem('dataentropy:learning-board:topic-1:v1')).toContain('learn');
   });
 
-  it('keeps later sections undiscoverable until the current section completes', async () => {
-    const user = userEvent.setup();
+  it('keeps route context and the guided step rail visible from the start', () => {
     render(<TopicLearningBoard {...props} />);
-    expect(screen.queryByRole('heading', { name: 'Recall' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /I understand the idea/i }));
-    expect(screen.getByRole('heading', { name: 'Explore' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Recall' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Learn' })).toBeInTheDocument();
+    expect(screen.getByText('Data Analyst · Topic 1 of 8')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Explore/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Recall/i })).toBeInTheDocument();
   });
 });

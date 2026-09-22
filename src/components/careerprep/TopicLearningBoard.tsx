@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowLeft,
   ArrowRight,
   BookOpen,
   Brain,
@@ -14,7 +12,6 @@ import {
   Lightbulb,
   ListChecks,
   LockKeyhole,
-  RotateCcw,
   Sparkles,
   Target,
   Wrench,
@@ -22,16 +19,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import TopicDiagram from './TopicDiagram';
 import type { Topic, TopicQuestion, TopicSection } from '@/hooks/useTopics';
 
 type StepId = 'learn' | 'explore' | 'recall' | 'practice' | 'apply' | 'checkpoint' | 'toolkit';
 
-interface StepDefinition {
-  id: StepId;
-  label: string;
-  eyebrow: string;
-  icon: typeof BookOpen;
-}
+type Step = { id: StepId; label: string; eyebrow: string; icon: typeof BookOpen };
 
 interface Props {
   topic: Topic;
@@ -42,14 +35,15 @@ interface Props {
   hasCheckpoint: boolean;
   toolkit: ReactNode;
   nextTopic?: { slug: string; title: string } | null;
+  routeContext?: string;
   onOpenQuestion: (slug: string) => void;
   onOpenCheckpoint: () => void;
   onOpenNext: () => void;
 }
 
-const BASE_STEPS: StepDefinition[] = [
+const BASE_STEPS: Step[] = [
   { id: 'learn', label: 'Learn', eyebrow: 'Build the idea', icon: BookOpen },
-  { id: 'explore', label: 'Explore', eyebrow: 'See it in action', icon: Layers3 },
+  { id: 'explore', label: 'Explore', eyebrow: 'Read the parts in order', icon: Layers3 },
   { id: 'recall', label: 'Recall', eyebrow: 'Retrieve from memory', icon: Brain },
   { id: 'practice', label: 'Practise', eyebrow: 'Try it yourself', icon: Code2 },
   { id: 'apply', label: 'Apply', eyebrow: 'Use it in context', icon: BriefcaseBusiness },
@@ -78,29 +72,26 @@ export default function TopicLearningBoard({
   hasCheckpoint,
   toolkit,
   nextTopic,
+  routeContext,
   onOpenQuestion,
   onOpenCheckpoint,
   onOpenNext,
 }: Props) {
-  const reduceMotion = useReducedMotion();
-  const steps = useMemo(
-    () => BASE_STEPS.filter((step) => step.id !== 'apply' || caseStudies.length > 0),
-    [caseStudies.length],
-  );
+  const steps = useMemo(() => BASE_STEPS.filter((step) => step.id !== 'apply' || caseStudies.length > 0), [caseStudies.length]);
   const [completed, setCompleted] = useState<Set<StepId>>(() => new Set(readCompleted(topic.id)));
-  const [activeId, setActiveId] = useState<StepId>(() => {
+  const [activeStep, setActiveStep] = useState(() => {
     const saved = new Set(readCompleted(topic.id));
-    return steps.find((step) => !saved.has(step.id))?.id ?? 'toolkit';
+    const firstOpen = steps.findIndex((step) => !saved.has(step.id));
+    return firstOpen === -1 ? Math.max(steps.length - 1, 0) : firstOpen;
   });
-  const [sectionIndex, setSectionIndex] = useState(0);
   const [recallRevealed, setRecallRevealed] = useState(false);
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     const saved = new Set(readCompleted(topic.id));
+    const firstOpen = steps.findIndex((step) => !saved.has(step.id));
     setCompleted(saved);
-    setActiveId(steps.find((step) => !saved.has(step.id))?.id ?? 'toolkit');
-    setSectionIndex(0);
+    setActiveStep(firstOpen === -1 ? Math.max(steps.length - 1, 0) : firstOpen);
     setRecallRevealed(false);
   }, [steps, topic.id]);
 
@@ -111,123 +102,105 @@ export default function TopicLearningBoard({
       window.localStorage.setItem(storageKey(topic.id), JSON.stringify([...next]));
       return next;
     });
-    setActiveId('toolkit');
-    setAnnouncement('Checkpoint complete. Toolkit is now highlighted.');
-  }, [completed, isDone, topic.id]);
-
-  const activeIndex = Math.max(0, steps.findIndex((step) => step.id === activeId));
-  const activeStep = steps[activeIndex];
-  const completeCount = steps.filter((step) => completed.has(step.id)).length;
-  const progress = Math.round((completeCount / steps.length) * 100);
+    setActiveStep(steps.findIndex((step) => step.id === 'toolkit'));
+    setAnnouncement('Checkpoint complete. Toolkit is ready.');
+  }, [completed, isDone, steps, topic.id]);
 
   const completeStep = (id: StepId) => {
-    const currentIndex = steps.findIndex((step) => step.id === id);
-    const nextStep = steps[currentIndex + 1];
     setCompleted((current) => {
       const next = new Set(current).add(id);
       window.localStorage.setItem(storageKey(topic.id), JSON.stringify([...next]));
       return next;
     });
-    if (nextStep) {
-      setActiveId(nextStep.id);
-      setAnnouncement(`${steps[currentIndex].label} complete. ${nextStep.label} is now highlighted.`);
-    }
+    const index = steps.findIndex((step) => step.id === id);
+    const nextStep = steps[index + 1];
+    if (nextStep) setActiveStep(index + 1);
+    setAnnouncement(nextStep ? `${steps[index].label} complete. Continue with ${nextStep.label}.` : `${steps[index].label} complete.`);
   };
 
-  const goBack = () => {
-    const previous = steps[activeIndex - 1];
-    if (previous) setActiveId(previous.id);
-  };
-
-  const commonFinish = (label = 'Complete step') => (
-    <Button className="min-h-11 gap-2 rounded-full px-5" onClick={() => completeStep(activeId)}>
+  const completeCount = steps.filter((step) => completed.has(step.id) || (step.id === 'checkpoint' && isDone)).length;
+  const progress = Math.round((completeCount / steps.length) * 100);
+  const finish = (id: StepId, label: string) => (
+    <Button className="min-h-11 gap-2 rounded-full px-5" onClick={() => completeStep(id)}>
       {label}<ArrowRight className="h-4 w-4" aria-hidden="true" />
     </Button>
   );
+  const current = steps[activeStep] ?? steps[0];
+  const currentDone = current && (completed.has(current.id) || (current.id === 'checkpoint' && isDone));
+
+  const renderCurrentStage = () => {
+    if (!current) return null;
+    if (current.id === 'learn') return <LearnStage topic={topic} onComplete={() => completeStep('learn')} />;
+    if (current.id === 'explore') return <ExploreStage sections={sections} onComplete={() => completeStep('explore')} />;
+    if (current.id === 'recall') return <RecallStage topic={topic} revealed={recallRevealed} setRevealed={setRecallRevealed} onComplete={() => completeStep('recall')} />;
+    if (current.id === 'practice') return <QuestionStage questions={practice} empty="No practice is attached yet. Continue when ready." onOpen={onOpenQuestion} icon="practice" footer={finish('practice', practice.length ? 'I finished practising' : 'Continue')} />;
+    if (current.id === 'apply') return <QuestionStage questions={caseStudies} empty="No case study is attached yet. Continue when ready." onOpen={onOpenQuestion} icon="case" footer={finish('apply', 'I explored the case')} />;
+    if (current.id === 'checkpoint') return <CheckpointStage isDone={isDone} hasCheckpoint={hasCheckpoint} onOpen={onOpenCheckpoint} onContinue={() => completeStep('checkpoint')} />;
+    return (
+      <div>
+        <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <p className="font-bold">Optional deeper reading</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">Use references, resources, and questions after completing the core sequence.</p>
+        </div>
+        {toolkit}
+        <div className="mt-6 flex flex-col gap-2 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="outline" className="min-h-11 rounded-full" onClick={() => completeStep('toolkit')} disabled={completed.has('toolkit')}>
+            {completed.has('toolkit') ? <><Check className="mr-2 h-4 w-4" />Sequence complete</> : 'Mark sequence complete'}
+          </Button>
+          {nextTopic ? <Button className="min-h-11 justify-between gap-3 rounded-full" onClick={onOpenNext}>Next topic: {nextTopic.title}<ArrowRight className="h-4 w-4" /></Button> : null}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card" aria-labelledby="learning-board-title">
-      <div className="border-b border-border/70 bg-muted/20 px-4 py-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="overflow-hidden rounded-[2rem] border border-border bg-card" aria-labelledby="learning-board-title">
+      <header className="border-b border-border/70 bg-primary/5 px-4 py-6 sm:px-8">
+        <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
-              <Sparkles className="h-4 w-4" aria-hidden="true" /> Interactive learning board
+              <Sparkles className="h-4 w-4" aria-hidden="true" /> Learning cockpit
             </div>
-            <h2 id="learning-board-title" className="mt-1 text-xl font-black tracking-tight sm:text-2xl">One clear step at a time</h2>
+            <h2 id="learning-board-title" className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">Your next useful move</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Follow the core Topic path first. Explore deeper resources after the next action is clear.</p>
+            {routeContext ? <p className="mt-3 text-sm font-bold text-primary">{routeContext}</p> : null}
           </div>
-          <div className="min-w-36">
-            <div className="mb-1.5 flex justify-between text-xs font-bold"><span>{completeCount}/{steps.length} steps</span><span>{progress}%</span></div>
-            <Progress value={progress} className="h-2 w-40 max-w-full" aria-label={`${progress}% of board steps complete`} />
+          <div className="min-w-40 rounded-2xl border border-border bg-card/80 p-3">
+            <div className="mb-1.5 flex justify-between text-xs font-bold"><span>{completeCount}/{steps.length} complete</span><span>{progress}%</span></div>
+            <Progress value={progress} className="h-2 w-44 max-w-full" aria-label={`${progress}% of reading sequence complete`} />
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col">
-        <div className="border-b border-border/70 px-4 py-3 sm:px-6" aria-label="Learning progress">
-          <ol className="flex items-center gap-1.5 overflow-hidden">
+        <nav className="mt-6 overflow-x-auto" aria-label="Topic learning sequence">
+          <ol className="flex min-w-max gap-2">
             {steps.map((step, index) => {
               const done = completed.has(step.id) || (step.id === 'checkpoint' && isDone);
-              const active = step.id === activeId;
-              return <li key={step.id} className="flex min-w-0 flex-1 items-center gap-1.5"><span className={`h-1.5 flex-1 rounded-full ${done || active ? 'bg-primary' : 'bg-muted'}`} /><span className="sr-only">Step {index + 1}: {step.label}{done ? ', complete' : active ? ', current' : ''}</span></li>;
+              const available = done || index === activeStep;
+              return (
+                <li key={step.id}>
+                  <button type="button" disabled={!available} onClick={() => setActiveStep(index)} aria-current={index === activeStep ? 'step' : undefined} className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${index === activeStep ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card hover:border-primary/40'} disabled:cursor-not-allowed disabled:opacity-60`}>
+                    <span className={`grid h-5 w-5 place-items-center rounded-full text-[10px] ${done ? 'bg-success text-success-foreground' : index === activeStep ? 'bg-primary-foreground/20' : 'bg-muted text-muted-foreground'}`}>{done ? <Check className="h-3 w-3" /> : index + 1}</span>
+                    {step.label}
+                  </button>
+                </li>
+              );
             })}
           </ol>
-        </div>
+        </nav>
+      </header>
 
-        <div className="min-w-0 p-4 sm:p-6 lg:p-8">
-          <div className="mb-5 flex items-start justify-between gap-4">
+      <article className="px-4 py-7 sm:px-8 sm:py-10" aria-labelledby="current-step-title">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-sm font-black text-primary">{activeStep + 1}</span>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{activeStep.eyebrow}</p>
-            <h3 className="mt-1 text-2xl font-black tracking-tight">{activeStep.label}</h3>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{current?.eyebrow}</p>
+              <h3 id="current-step-title" className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{current?.label}</h3>
             </div>
-            {completed.has(activeId) ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Done</Badge> : null}
           </div>
-
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={activeId}
-              initial={reduceMotion ? false : { opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: -12 }}
-              transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-            >
-              {activeId === 'learn' ? (
-                <LearnStage topic={topic} onComplete={() => completeStep('learn')} />
-              ) : activeId === 'explore' ? (
-                <ExploreStage sections={sections} index={sectionIndex} setIndex={setSectionIndex} onComplete={() => completeStep('explore')} reduceMotion={!!reduceMotion} />
-              ) : activeId === 'recall' ? (
-                <RecallStage topic={topic} revealed={recallRevealed} setRevealed={setRecallRevealed} onComplete={() => completeStep('recall')} reduceMotion={!!reduceMotion} />
-              ) : activeId === 'practice' ? (
-                <QuestionStage questions={practice} empty="No practice is attached yet. You can still continue." onOpen={onOpenQuestion} icon="practice" footer={commonFinish(practice.length ? 'I finished practising' : 'Continue')} />
-              ) : activeId === 'apply' ? (
-                <QuestionStage questions={caseStudies} empty="No case study is attached yet." onOpen={onOpenQuestion} icon="case" footer={commonFinish('I explored the case')} />
-              ) : activeId === 'checkpoint' ? (
-                <CheckpointStage isDone={isDone} hasCheckpoint={hasCheckpoint} onOpen={onOpenCheckpoint} onContinue={() => completeStep('checkpoint')} />
-              ) : (
-                <div>
-                  <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                    <p className="font-bold">Keep learning without losing your place.</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">Open references, ask a mentor, or choose a deeper resource. These are optional and do not block your progress.</p>
-                  </div>
-                  {toolkit}
-                  <div className="mt-6 flex flex-col gap-2 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <Button variant="outline" className="min-h-11 rounded-full" onClick={() => completeStep('toolkit')} disabled={completed.has('toolkit')}>
-                      {completed.has('toolkit') ? <><Check className="mr-2 h-4 w-4" />Toolkit explored</> : 'Mark toolkit explored'}
-                    </Button>
-                    {nextTopic ? <Button className="min-h-11 justify-between gap-3 rounded-full" onClick={onOpenNext}>Next topic: {nextTopic.title}<ArrowRight className="h-4 w-4" /></Button> : null}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          <div className="mt-6 flex items-center justify-between border-t border-border/70 pt-4">
-            <Button variant="ghost" className="min-h-11 gap-2 rounded-full" onClick={goBack} disabled={activeIndex === 0}>
-              <ArrowLeft className="h-4 w-4" />Previous
-            </Button>
-            <p className="hidden text-xs text-muted-foreground sm:block">Step {activeIndex + 1} of {steps.length}</p>
-          </div>
+          {currentDone ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Done</Badge> : null}
         </div>
-      </div>
+        {renderCurrentStage()}
+      </article>
       <p className="sr-only" aria-live="polite">{announcement}</p>
     </section>
   );
@@ -240,65 +213,49 @@ function LearnStage({ topic, onComplete }: { topic: Topic; onComplete: () => voi
     { label: 'How it works', body: topic.how_it_works, icon: Layers3 },
     { label: 'In plain terms', body: topic.analogy, icon: Sparkles },
   ];
-  const [open, setOpen] = useState(0);
   return (
     <div>
-      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">Tap each splash card to switch the lens. The idea stays compact while you control the depth.</p>
-      <div className="mt-5 overflow-hidden rounded-xl border border-border/70 bg-muted/10">
-        <div className="flex gap-1 overflow-x-auto border-b border-border/70 p-2" role="tablist" aria-label="Learning lenses">
-          {cards.map(({ label, icon: Icon }, index) => {
-            const active = index === open;
-            return <button key={label} type="button" role="tab" aria-selected={active} onClick={() => setOpen(index)} className={`flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-card hover:text-foreground'}`}><Icon className="h-4 w-4" aria-hidden="true" />{label}</button>;
-          })}
-        </div>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={open} role="tabpanel" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="min-h-32 p-5 sm:p-6">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">{cards[open].label}</p>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-foreground/85">{cards[open].body}</p>
-          </motion.div>
-        </AnimatePresence>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {cards.map(({ label, body, icon: Icon }) => (
+          <div key={label} className="rounded-2xl border border-border bg-muted/20 p-4 sm:p-5">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-primary"><Icon className="h-4 w-4" />{label}</div>
+            <p className="mt-3 text-base leading-7 text-foreground/90">{body}</p>
+          </div>
+        ))}
       </div>
       <Button className="mt-5 min-h-11 gap-2 rounded-full" onClick={onComplete}>I understand the idea<ArrowRight className="h-4 w-4" /></Button>
     </div>
   );
 }
 
-function ExploreStage({ sections, index, setIndex, onComplete, reduceMotion }: { sections: TopicSection[]; index: number; setIndex: (index: number) => void; onComplete: () => void; reduceMotion: boolean }) {
-  if (!sections.length) return <EmptyStage message="No deep-dive cards are attached yet." action="Continue to recall" onAction={onComplete} />;
-  const section = sections[Math.min(index, sections.length - 1)];
-  const last = index >= sections.length - 1;
+function ExploreStage({ sections, onComplete }: { sections: TopicSection[]; onComplete: () => void }) {
+  if (!sections.length) return <EmptyStage message="No deep-dive sections are attached yet." action="Continue to recall" onAction={onComplete} />;
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Card {index + 1} of {sections.length}</p><div className="flex gap-1" aria-hidden="true">{sections.map((item, dot) => <span key={item.id} className={`h-1.5 rounded-full transition-all ${dot === index ? 'w-7 bg-primary' : dot < index ? 'w-3 bg-success' : 'w-3 bg-muted'}`} />)}</div></div>
-      <AnimatePresence>
-        <motion.article key={section.id} initial={reduceMotion ? false : { opacity: 0, scale: 0.98, rotate: 0.4 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }} transition={{ duration: reduceMotion ? 0 : 0.22 }} className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-secondary/30 p-5 shadow-card sm:p-7">
-          <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">{section.section_type.replaceAll('_', ' ')}</span>
-          <h4 className="mt-2 text-xl font-black">{section.title}</h4>
-          <p className="mt-4 whitespace-pre-line text-base leading-7 text-foreground/85">{section.body}</p>
-          {section.takeaway ? <div className="mt-5 rounded-2xl border border-primary/20 bg-card/80 p-4"><p className="text-xs font-black uppercase tracking-wider text-primary">Takeaway</p><p className="mt-1 text-sm font-semibold leading-6">{section.takeaway}</p></div> : null}
-        </motion.article>
-      </AnimatePresence>
-      <div className="mt-5 flex justify-between gap-2">
-        <Button variant="outline" className="min-h-11 rounded-full" disabled={index === 0} onClick={() => setIndex(Math.max(0, index - 1))}><ArrowLeft className="mr-2 h-4 w-4" />Previous card</Button>
-        <Button className="min-h-11 rounded-full" onClick={() => last ? onComplete() : setIndex(index + 1)}>{last ? 'Finish exploring' : 'Next card'}<ArrowRight className="ml-2 h-4 w-4" /></Button>
+      <div className="space-y-4">
+        {sections.map((section, index) => (
+          <article key={section.id} className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-secondary/30 p-5 sm:p-6">
+            <div className="flex items-start gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground">{index + 1}</span><div><p className="text-xs font-black uppercase tracking-[0.16em] text-primary">{section.section_type.replaceAll('_', ' ')}</p><h4 className="mt-1 text-xl font-black">{section.title}</h4></div></div>
+            <p className="mt-4 whitespace-pre-line text-base leading-7 text-foreground/90">{section.body}</p>
+            {section.diagram ? <TopicDiagram spec={section.diagram} /> : null}
+            {section.takeaway ? <div className="mt-5 rounded-2xl border border-primary/20 bg-card/80 p-4"><p className="text-xs font-black uppercase tracking-wider text-primary">Takeaway</p><p className="mt-1 text-sm font-semibold leading-6">{section.takeaway}</p></div> : null}
+          </article>
+        ))}
       </div>
+      <Button className="mt-5 min-h-11 gap-2 rounded-full" onClick={onComplete}>Finish reading this section<ArrowRight className="h-4 w-4" /></Button>
     </div>
   );
 }
 
-function RecallStage({ topic, revealed, setRevealed, onComplete, reduceMotion }: { topic: Topic; revealed: boolean; setRevealed: (value: boolean) => void; onComplete: () => void; reduceMotion: boolean }) {
+function RecallStage({ topic, revealed, setRevealed, onComplete }: { topic: Topic; revealed: boolean; setRevealed: (value: boolean) => void; onComplete: () => void }) {
   return (
     <div>
-      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">Answer aloud before you flip the card. Retrieval is the interaction—not rereading.</p>
-      <button type="button" onClick={() => setRevealed(!revealed)} aria-pressed={revealed} className="mt-4 block min-h-64 w-full rounded-3xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" style={{ perspective: 1000 }}>
-        <motion.div animate={reduceMotion ? undefined : { rotateY: revealed ? 180 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.35 }} className="relative min-h-64 w-full" style={{ transformStyle: 'preserve-3d' }}>
-          <div className={`absolute inset-0 flex flex-col justify-between rounded-3xl border border-primary/30 bg-gradient-to-br from-primary to-primary/75 p-6 text-primary-foreground shadow-xl ${reduceMotion && revealed ? 'hidden' : ''}`} style={{ backfaceVisibility: 'hidden' }}>
-            <Brain className="h-7 w-7" /><div><p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Recall prompt</p><h4 className="mt-2 text-xl font-black sm:text-2xl">Explain {topic.title} in one sentence, then name one decision it improves.</h4></div><p className="text-sm font-bold opacity-85">Tap to reveal the self-check</p>
-          </div>
-          <div className={`absolute inset-0 flex flex-col justify-between rounded-3xl border border-success/30 bg-success-soft p-6 ${reduceMotion && !revealed ? 'hidden' : ''}`} style={{ backfaceVisibility: 'hidden', transform: reduceMotion ? undefined : 'rotateY(180deg)' }}>
-            <CheckCircle2 className="h-7 w-7 text-success" /><div><p className="text-xs font-black uppercase tracking-[0.2em] text-success">Self-check</p><p className="mt-2 text-base leading-7">A useful answer should connect the idea to this outcome: <strong>{topic.why_it_matters}</strong></p></div><p className="text-sm font-bold text-success">Tap to see the prompt again</p>
-          </div>
-        </motion.div>
+      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">Answer aloud before revealing the self-check.</p>
+      <button type="button" onClick={() => setRevealed(!revealed)} aria-pressed={revealed} className="mt-4 block w-full rounded-3xl border border-primary/30 bg-primary/5 p-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <Brain className="h-7 w-7 text-primary" />
+        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-primary">{revealed ? 'Self-check' : 'Recall prompt'}</p>
+        <p className="mt-2 text-xl font-black">{revealed ? `A useful answer connects ${topic.title} to: ${topic.why_it_matters}` : `Explain ${topic.title} in one sentence, then name one decision it improves.`}</p>
+        <p className="mt-4 text-sm font-bold text-muted-foreground">{revealed ? 'Tap to hide the answer' : 'Tap to reveal the self-check'}</p>
       </button>
       <Button className="mt-5 min-h-11 rounded-full" disabled={!revealed} onClick={onComplete}>I recalled it without notes<ArrowRight className="ml-2 h-4 w-4" /></Button>
     </div>
@@ -309,7 +266,7 @@ function QuestionStage({ questions, empty, onOpen, icon, footer }: { questions: 
   const Icon = icon === 'practice' ? ListChecks : BriefcaseBusiness;
   return (
     <div>
-      <p className="text-sm leading-6 text-muted-foreground">Open an activity, work it through, then return to this board. Your place is saved automatically.</p>
+      <p className="text-sm leading-6 text-muted-foreground">Open an activity, work it through, then return to this reading sequence.</p>
       {questions.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{questions.map((question, index) => <button key={question.id} onClick={() => onOpen(question.slug)} className="group min-h-24 rounded-2xl border border-border bg-card p-4 text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-bold text-muted-foreground">Activity {index + 1} · {question.difficulty}</span><span className="mt-1 block font-extrabold leading-snug group-hover:text-primary">{question.title}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></div></button>)}</div> : <p className="mt-4 rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{empty}</p>}
       <div className="mt-5">{footer}</div>
     </div>
@@ -317,7 +274,7 @@ function QuestionStage({ questions, empty, onOpen, icon, footer }: { questions: 
 }
 
 function CheckpointStage({ isDone, hasCheckpoint, onOpen, onContinue }: { isDone: boolean; hasCheckpoint: boolean; onOpen: () => void; onContinue: () => void }) {
-  if (isDone) return <div className="rounded-3xl border border-success/30 bg-success-soft p-6 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-success text-success-foreground"><CheckCircle2 className="h-7 w-7" /></span><h4 className="mt-4 text-xl font-black">Checkpoint passed</h4><p className="mt-2 text-sm text-muted-foreground">This topic is complete. Your progress has been saved.</p><Button className="mt-5 min-h-11 rounded-full" onClick={onContinue}>Open my toolkit<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
+  if (isDone) return <div className="rounded-3xl border border-success/30 bg-success-soft p-6 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-success text-success-foreground"><CheckCircle2 className="h-7 w-7" /></span><h4 className="mt-4 text-xl font-black">Checkpoint passed</h4><p className="mt-2 text-sm text-muted-foreground">This topic is complete. Your progress has been saved.</p><Button className="mt-5 min-h-11 rounded-full" onClick={onContinue}>Continue to toolkit<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
   if (!hasCheckpoint) return <EmptyStage message="This topic does not have a checkpoint yet." action="Continue to toolkit" onAction={onContinue} />;
   return <div className="rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/10 to-card p-6 sm:p-8"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground"><LockKeyhole className="h-5 w-5" /></span><h4 className="mt-4 text-xl font-black">Ready to prove it?</h4><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">One multiple-choice question closes this topic. A wrong answer does not remove anything you have earned—you can review and try again.</p><Button className="mt-5 min-h-11 rounded-full" onClick={onOpen}>Answer checkpoint<Target className="ml-2 h-4 w-4" /></Button></div>;
 }
