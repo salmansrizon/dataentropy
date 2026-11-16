@@ -26,7 +26,7 @@ const JumpNav = ({ items }: JumpNavProps) => {
   return (
     <nav
       aria-label={t.sections}
-      className="sticky top-16 z-30 -mx-4 overflow-x-auto border-b border-border bg-background/90 px-4 py-2 backdrop-blur no-scrollbar"
+      className="sticky top-[5.5rem] z-30 -mx-4 overflow-x-auto rounded-2xl bg-background/90 px-4 py-2 backdrop-blur no-scrollbar"
     >
       <ul className="flex gap-1">
         {items.map(({ id, label }) => {
@@ -47,7 +47,7 @@ const JumpNav = ({ items }: JumpNavProps) => {
                   history.replaceState(null, "", `#${id}`);
                 }}
                 className={`block whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                  isActive ? "bg-brand-blue text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {label}

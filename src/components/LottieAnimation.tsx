@@ -38,7 +38,7 @@ const LottieAnimation = ({
   }, [player, inView, autoplay, reduceMotion, playOnHover]);
 
   return (
-    <div ref={ref} className={className} style={style}>
+    <div ref={ref} className={`lottie-soft-edges ${className ?? ""}`} style={style}>
       <DotLottieReact
         src={src}
         loop={loop}

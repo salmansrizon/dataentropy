@@ -22,6 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import TopicDiagram from './TopicDiagram';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useT, useLang } from '@/i18n/lang';
+import { useDifficultyLabel } from './useDifficultyLabel';
 import { RevealGroup, RevealItem } from '@/pages/course-details/motion';
 import type { Topic, TopicQuestion, TopicSection } from '@/hooks/useTopics';
 
@@ -332,11 +333,12 @@ function RecallStage({ topic, revealed, setRevealed, onComplete }: { topic: Topi
 function QuestionStage({ questions, empty, onOpen, icon, footer }: { questions: TopicQuestion[]; empty: string; onOpen: (slug: string) => void; icon: 'practice' | 'case'; footer: ReactNode }) {
   const t = useT(T);
   const { num } = useLang();
+  const dl = useDifficultyLabel();
   const Icon = icon === 'practice' ? ListChecks : BriefcaseBusiness;
   return (
     <div>
       <p className="text-sm leading-6 text-muted-foreground">{t.openActivity}</p>
-      {questions.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{questions.map((question, index) => <button key={question.id} onClick={() => onOpen(question.slug)} className="group min-h-24 rounded-2xl border border-border bg-card p-4 text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-bold text-muted-foreground">{t.activity(num(index + 1), question.difficulty)}</span><span className="mt-1 block font-extrabold leading-snug group-hover:text-primary">{question.title}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></div></button>)}</div> : <p className="mt-4 rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{empty}</p>}
+      {questions.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2">{questions.map((question, index) => <button key={question.id} onClick={() => onOpen(question.slug)} className="group min-h-24 rounded-2xl border border-border bg-card p-4 text-left transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-bold text-muted-foreground">{t.activity(num(index + 1), dl(question.difficulty))}</span><span className="mt-1 block font-extrabold leading-snug group-hover:text-primary">{question.title}</span></span><ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" /></div></button>)}</div> : <p className="mt-4 rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">{empty}</p>}
       <div className="mt-5">{footer}</div>
     </div>
   );

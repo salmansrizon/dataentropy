@@ -28,12 +28,12 @@ const BatchCard = ({ batch, startDate }: { batch?: SalesPage["batch"]; startDate
   return (
     <Reveal>
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-card">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-2 -top-2 opacity-80">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary"><CalendarClock className="h-8 w-8" /></span>
-        </div>
-        <div className="mb-4 flex flex-wrap items-center gap-2 pr-24">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-lg font-bold text-foreground">{pick(batch?.name) || t.batch}</h3>
-          {batch?.mode && <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-brand-blue"><LivePulse />{pick(batch.mode)}</span>}
+          {batch?.mode && <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"><LivePulse />{pick(batch.mode)}</span>}
+          </div>
+          <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><CalendarClock className="h-5 w-5" /></span>
         </div>
         <ul className="space-y-3 text-sm">
           {rows.map(({ Icon, label, value }) => (

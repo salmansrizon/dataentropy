@@ -5,7 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChartNoAxesColumnIncreasing, ChevronDown, Menu, X } from "lucide-react"
+import { ChevronDown, Menu, X } from "lucide-react"
+import Logo from "./Logo"
 import { CourseSearchButton, CourseSearchInline } from "./CourseSearch"
 import { motion, useReducedMotion } from "framer-motion"
 import { useEffect, useState } from "react"
@@ -76,8 +77,8 @@ const Navbar = () => {
     <nav aria-label={t.main} className="site-nav fixed top-0 left-0 right-0 z-50 bg-panel/80 backdrop-blur-xl border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className={`inline-flex items-center gap-2 rounded-sm font-display text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors ${focus}`}>
-            <ChartNoAxesColumnIncreasing className="h-7 w-7 text-primary" aria-hidden="true" />DataEntropy
+          <Link to="/" aria-label="DataEntropy" className={`inline-flex min-h-11 items-center rounded-sm transition-opacity hover:opacity-85 ${focus}`}>
+            <Logo />
           </Link>
 
           {/* Desktop navigation */}
@@ -92,7 +93,7 @@ const Navbar = () => {
                     {g.name}
                     <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="border-0 shadow-pop">
                     {g.items.map((i) => (
                       <DropdownMenuItem key={i.href} asChild>
                         <Link to={i.href}>{i.name}</Link>

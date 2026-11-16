@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { track } from '@/services/funnel';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useLang, useT } from '@/i18n/lang';
+import { useDifficultyLabel } from './useDifficultyLabel';
 import { RevealGroup, RevealItem } from '@/pages/course-details/motion';
 
 const T = {
@@ -114,6 +115,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
   const reduceMotion = useReducedMotion();
   const t = useT(T);
   const { num } = useLang();
+  const dl = useDifficultyLabel();
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
   const { journeys, loading: journeysLoading } = useJourneys();
@@ -308,7 +310,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
             <h2 className="mb-2 mt-1 text-2xl font-extrabold">{recommendedJourney?.title ?? (preferredRole ? t.noJourney(preferredRole) : t.chooseWork)}</h2>
             <p className="text-sm text-muted-foreground mb-4">
               {recommendedJourney
-                ? t.built(String(preferredRole), num(recommendation?.sessionsPerWeek ?? 0), num(recommendation?.minutesPerSession ?? 0), (recommendation?.difficulty ?? '').toLowerCase())
+                ? t.built(String(preferredRole), num(recommendation?.sessionsPerWeek ?? 0), num(recommendation?.minutesPerSession ?? 0), dl(recommendation?.difficulty).toLowerCase())
                 : preferences
                   ? t.saved(String(preferredRole))
                   : t.explore}
@@ -317,7 +319,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
               <motion.div initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex max-w-lg flex-wrap gap-2 text-xs font-semibold">
                 <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary"><Clock3 className="mr-1 inline h-3.5 w-3.5" />{t.sessionsWeek(num(recommendation.sessionsPerWeek))}</span>
                 <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">{recommendation.startingMode.replace('-', ' ')}</span>
-                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">{t.startAt(recommendation.difficulty)}</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">{t.startAt(dl(recommendation.difficulty))}</span>
               </motion.div>
             )}
             <RevealGroup className="path-options">
@@ -361,7 +363,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
           className="mb-6 flex min-h-16 w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left shadow-card transition-colors hover:bg-primary/10"
         >
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><CalendarDays className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-primary">{t.doNow}</span><span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span><span className="block truncate text-xs text-muted-foreground">{daily.question.industry} · {daily.question.difficulty}</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-primary">{t.doNow}</span><span className="block line-clamp-2 text-sm font-bold leading-snug">{daily.question.title}</span><span className="block truncate text-xs text-muted-foreground">{daily.question.industry} · {dl(daily.question.difficulty)}</span></span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </motion.button>
       )}
@@ -375,7 +377,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
               <div key={review.slug} className="flex min-h-14 items-center gap-2 rounded-xl border border-warning/30 bg-card p-2">
               <button onClick={() => onOpenQuestion(review.slug)} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition-colors hover:bg-warning-soft">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning-soft text-warning"><RotateCcw className="h-4 w-4" aria-hidden="true" /></span>
-                <span className="min-w-0 flex-1"><span className="block line-clamp-2 text-sm font-bold">{review.title}</span><span className="block truncate text-xs text-muted-foreground">{review.industry} · {review.difficulty}</span></span>
+                <span className="min-w-0 flex-1"><span className="block line-clamp-2 text-sm font-bold">{review.title}</span><span className="block truncate text-xs text-muted-foreground">{review.industry} · {dl(review.difficulty)}</span></span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               </button>
               <Button size="sm" variant="ghost" className="min-h-11 shrink-0 px-2 text-xs" disabled={postpone.isPending} onClick={() => postpone.mutate(review)}>{t.tomorrow}</Button>
@@ -436,7 +438,7 @@ const JourneyPanel = ({ questions, onOpenQuestion }: Props) => {
                   <span className="block truncate text-xs text-muted-foreground">
                     {item.kind === 'retry'
                       ? t.retry
-                      : `${item.industry} · ${item.difficulty}`}
+                      : `${item.industry} · ${dl(item.difficulty)}`}
                   </span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />

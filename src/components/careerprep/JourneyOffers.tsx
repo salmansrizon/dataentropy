@@ -9,6 +9,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GraduationCap, CalendarDays, BookDown, CheckCircle2, Download } from 'lucide-react';
 import { track, trackOnce } from '@/services/funnel';
+import { useLang, useT } from '@/i18n/lang';
+
+const T = {
+  en: {
+    course: 'Recommended course', viewCourse: 'View course', webinar: 'Upcoming webinar', free: 'free',
+    tba: 'Date to be announced', register: 'Register', resource: 'Free resource',
+    notUploaded: 'Thanks — this one is not uploaded yet. We have your details and will let you know.',
+    unlocked: 'Unlocked.', again: 'Download again', email: 'Email', mobile: 'Mobile', optional: '(optional)',
+    getPdf: 'Get the PDF',
+    instant: 'Instant download. We store your email to record the unlock; a phone number is not required.',
+    saveFail: 'Could not save that — try again.', badEmail: 'That does not look like an email address.',
+    badPhone: 'Enter a valid mobile number, e.g. 01712345678.',
+  },
+  bn: {
+    course: 'প্রস্তাবিত কোর্স', viewCourse: 'কোর্স দেখুন', webinar: 'আসন্ন ওয়েবিনার', free: 'ফ্রি',
+    tba: 'তারিখ শীঘ্রই জানানো হবে', register: 'রেজিস্টার করুন', resource: 'ফ্রি রিসোর্স',
+    notUploaded: 'ধন্যবাদ — এটি এখনো আপলোড করা হয়নি। আপনার তথ্য আমাদের কাছে আছে, প্রস্তুত হলে জানাব।',
+    unlocked: 'আনলক হয়েছে।', again: 'আবার ডাউনলোড করুন', email: 'ইমেইল', mobile: 'মোবাইল', optional: '(ঐচ্ছিক)',
+    getPdf: 'PDF নিন',
+    instant: 'তাৎক্ষণিক ডাউনলোড। আনলক রেকর্ড করতে আমরা আপনার ইমেইল রাখি; ফোন নম্বর দেওয়া বাধ্যতামূলক নয়।',
+    saveFail: 'সংরক্ষণ করা যায়নি — আবার চেষ্টা করুন।', badEmail: 'এটি সঠিক ইমেইল ঠিকানা মনে হচ্ছে না।',
+    badPhone: 'সঠিক মোবাইল নম্বর দিন, যেমন 01712345678।',
+  },
+};
 
 // One offer per Surface, by fixed priority (§5). Which course, webinar and
 // ebook appear is an explicit per-Journey mapping set by an admin — not tag
@@ -31,6 +55,8 @@ const EBOOK_BUCKET = 'ebooks';
 
 const JourneyOffers = ({ journeyId }: Props) => {
   const navigate = useNavigate();
+  const t = useT(T);
+  const { date } = useLang();
   const { session } = useAuth();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -89,7 +115,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
       setUnlockedUrl(url ?? 'pending');
       if (url) window.open(url, '_blank', 'noopener');
     },
-    onError: (e: any) => setError(e.message ?? 'Could not save that — try again.'),
+    onError: (e: any) => setError(e.message ?? t.saveFail),
   });
 
   const course = offers?.course ?? null;
@@ -117,7 +143,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
             <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-              <GraduationCap className="h-3.5 w-3.5" /> Recommended course
+              <GraduationCap className="h-3.5 w-3.5" /> {t.course}
             </p>
             <p className="font-semibold">{course.title}</p>
             {course.short_description && (
@@ -131,7 +157,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
                 navigate(`/course/${course.id}`);
               }}
             >
-              View course
+              {t.viewCourse}
             </Button>
           </CardContent>
         </Card>
@@ -141,16 +167,14 @@ const JourneyOffers = ({ journeyId }: Props) => {
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
             <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5" /> Upcoming webinar
+              <CalendarDays className="h-3.5 w-3.5" /> {t.webinar}
             </p>
             <p className="font-semibold">{webinar.title}</p>
             <p className="mb-3 text-xs text-muted-foreground">
               {webinar.webinar_date
-                ? new Date(webinar.webinar_date).toLocaleDateString(undefined, {
-                    weekday: 'short', day: 'numeric', month: 'short',
-                  })
-                : 'Date to be announced'}{' '}
-              · free
+                ? date(webinar.webinar_date, { weekday: 'short', day: 'numeric', month: 'short' })
+                : t.tba}{' '}
+              · {t.free}
             </p>
             {/* A live session has a real deadline, so showing it is information
                 rather than pressure — the countdown disappears once it starts,
@@ -169,7 +193,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
                 navigate(`/webinar/${webinar.id}`);
               }}
             >
-              Register
+              {t.register}
             </Button>
           </CardContent>
         </Card>
@@ -179,7 +203,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
         <Card className="border-dashed">
           <CardContent className="flex h-full flex-col p-4">
             <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-              <BookDown className="h-3.5 w-3.5" /> Free resource
+              <BookDown className="h-3.5 w-3.5" /> {t.resource}
             </p>
             <p className="font-semibold">{ebook.title}</p>
             <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{ebook.description}</p>
@@ -188,26 +212,26 @@ const JourneyOffers = ({ journeyId }: Props) => {
               <div className="mt-auto space-y-2">
                 {unlockedUrl === 'pending' ? (
                   <p className="text-xs text-muted-foreground">
-                    Thanks — this one is not uploaded yet. We have your details and will let you know.
+                    {t.notUploaded}
                   </p>
                 ) : (
                   <>
                     <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-success">
-                      <CheckCircle2 className="h-4 w-4" /> Unlocked.
+                      <CheckCircle2 className="h-4 w-4" /> {t.unlocked}
                     </p>
                     <Button
                       size="sm"
                       className="w-full rounded-full"
                       onClick={() => window.open(unlockedUrl, '_blank', 'noopener')}
                     >
-                      <Download className="mr-1.5 h-3.5 w-3.5" /> Download again
+                      <Download className="mr-1.5 h-3.5 w-3.5" /> {t.again}
                     </Button>
                   </>
                 )}
               </div>
             ) : (
               <div className="mt-auto space-y-2">
-                <label htmlFor="ebook-email" className="block text-sm font-semibold">Email <span className="text-danger" aria-hidden="true">*</span></label>
+                <label htmlFor="ebook-email" className="block text-sm font-semibold">{t.email} <span className="text-danger" aria-hidden="true">*</span></label>
                 <Input
                   id="ebook-email"
                   type="email"
@@ -218,7 +242,7 @@ const JourneyOffers = ({ journeyId }: Props) => {
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 />
-                <label htmlFor="ebook-phone" className="block text-sm font-semibold">Mobile <span className="font-normal text-muted-foreground">(optional)</span></label>
+                <label htmlFor="ebook-phone" className="block text-sm font-semibold">{t.mobile} <span className="font-normal text-muted-foreground">{t.optional}</span></label>
                 <Input
                   id="ebook-phone"
                   type="tel"
@@ -238,20 +262,20 @@ const JourneyOffers = ({ journeyId }: Props) => {
                     // Format is the only check there is — nothing verifies these
                     // details, since the file is handed over immediately.
                     if (!EMAIL_RE.test(email.trim())) {
-                      setError('That does not look like an email address.');
+                      setError(t.badEmail);
                       return;
                     }
                     if (phone.trim() && !PHONE_RE.test(phone.replace(/[\s-]/g, ''))) {
-                      setError('Enter a valid mobile number, e.g. 01712345678.');
+                      setError(t.badPhone);
                       return;
                     }
                     requestEbook.mutate();
                   }}
                 >
-                  <Download className="mr-1.5 h-3.5 w-3.5" /> Get the PDF
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> {t.getPdf}
                 </Button>
                 <p className="text-sm leading-5 text-muted-foreground">
-                  Instant download. We store your email to record the unlock; a phone number is not required.
+                  {t.instant}
                 </p>
               </div>
             )}

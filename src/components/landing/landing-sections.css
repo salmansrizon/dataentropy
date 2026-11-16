@@ -6,3 +6,8 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-bulb { animation: none; }
 }
+
+/* Soft glow behind the illustration: fades to transparent, so no hard edge against the section background. */
+.why-glow {
+  background: radial-gradient(closest-side, hsl(var(--primary) / 0.12), hsl(var(--primary) / 0.05) 60%, transparent 100%);
+}

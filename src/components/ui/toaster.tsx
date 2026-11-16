@@ -1,4 +1,7 @@
 import { useToast } from "@/hooks/use-toast"
+import { useT } from "@/i18n/lang"
+
+const T = { en: { region: "Notifications ({hotkey})" }, bn: { region: "নোটিফিকেশন ({hotkey})" } }
 import {
   Toast,
   ToastClose,
@@ -9,6 +12,7 @@ import {
 } from "@/components/ui/toast"
 
 export function Toaster() {
+  const t = useT(T)
   const { toasts } = useToast()
 
   return (
@@ -27,7 +31,7 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport />
+      <ToastViewport label={t.region} />
     </ToastProvider>
   )
 }

@@ -524,9 +524,10 @@ export default function CourseDetails() {
                 <CommunityContact community={salesPage.community} contact={salesPage.contact} />
               </div>
               <aside className="hidden lg:block w-full lg:w-[35%]">
-                <div className="sticky top-28 max-h-[calc(100vh-8rem)] space-y-6 overflow-y-auto rounded-3xl">
-                  <PriceCard {...priceCardProps} />
+                {/* full-height column so the sticky price card can follow the whole page */}
+                <div className="flex h-full flex-col gap-6">
                   <BatchCard batch={salesPage.batch} startDate={course.start_date} />
+                  <div className="sticky top-28"><PriceCard {...priceCardProps} /></div>
                 </div>
               </aside>
             </div>

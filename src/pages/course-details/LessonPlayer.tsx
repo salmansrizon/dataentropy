@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLang, useT } from "@/i18n/lang";
 import {
@@ -6,6 +5,8 @@ import {
   GraduationCap, Rocket, BookOpen, Layout,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import BrandedVideoPlayer from "@/components/BrandedVideoPlayer";
+import { youTubeId } from "@/lib/youtube";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { CourseContent, CourseSection } from "./types";
 
@@ -54,13 +55,12 @@ export default function LessonPlayer({
 }: LessonPlayerProps) {
   const t = useT(T);
   const { num } = useLang();
-  const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
   const all = sections.flatMap((s) => s.contents ?? []);
   const total = all.length;
   const completed = all.filter((i) => completedIds.has(i.id)).length;
 
   return (
-    <div id="course-content" className="scroll-mt-32 bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-card">
+    <div id="course-content" className="scroll-mt-40 bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-card">
       {showProgress && (
         <>
           <div className="flex items-center justify-between mb-6">
@@ -108,43 +108,13 @@ export default function LessonPlayer({
                             {(() => {
                               const videoUrl = (item.content_data as any)?.video_url;
                               if (!videoUrl) return null;
-                              const ytId = videoUrl.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1];
+                              const ytId = youTubeId(videoUrl);
                               if (!ytId) return null;
                               if (unlocked) {
-                                const isPlaying = playingLessons.has(item.id);
+                                // Site-branded player: no YouTube chrome, our own controls
                                 return (
-                                  <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-scrim">
-                                    <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-                                      {isPlaying ? (
-                                        <>
-                                          <iframe
-                                            src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&fs=1&iv_load_policy=3&cc_load_policy=0&playsinline=1&autoplay=1`}
-                                            className="absolute inset-0 w-full h-full"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                            title={item.title}
-                                          />
-                                          {/* Mask YouTube chrome (top title bar & bottom watch-on-yt) */}
-                                          <div className="absolute top-0 left-0 right-0 h-14 bg-scrim pointer-events-none z-10" />
-                                          <div className="absolute bottom-0 right-0 h-12 w-40 bg-scrim pointer-events-none z-10" />
-                                        </>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => setPlayingLessons((prev) => new Set(prev).add(item.id))}
-                                          className="absolute inset-0 w-full h-full group/play"
-                                          aria-label={`${t.play} ${item.title}`}
-                                        >
-                                          <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
-                                          <div className="absolute inset-0 bg-scrim/30 group-hover/play:bg-scrim/40 transition-colors" />
-                                          <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-16 h-16 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-primary-foreground/20 group-hover/play:scale-110 transition-transform">
-                                              <Play className="w-7 h-7 text-primary-foreground fill-current ml-1" />
-                                            </div>
-                                          </div>
-                                        </button>
-                                      )}
-                                    </div>
+                                  <div className="mt-3 overflow-hidden rounded-xl border border-border shadow-sm">
+                                    <BrandedVideoPlayer videoId={ytId} title={item.title} />
                                   </div>
                                 );
                               }

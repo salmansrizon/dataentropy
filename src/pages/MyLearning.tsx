@@ -75,7 +75,9 @@ interface ContentRow {
 }
 
 export default function MyLearning() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAnonymous, loading: authLoading } = useAuth();
+  // Visitors get an anonymous session; they have no enrolments to show, so treat them as signed out.
+  const needsSignIn = !user || isAnonymous;
   const t = useT(T);
   const { num } = useLang();
   const reduce = useReducedMotion();
@@ -182,14 +184,14 @@ export default function MyLearning() {
               <Link to="/courses">{t.browse} <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="mt-8 grid gap-3 sm:grid-cols-4">
+          {!needsSignIn && <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {([[t.enrolled, stats.total], [t.active, stats.active], [t.pending, stats.pending], [t.complete, stats.completed]] as const).map(([label, value]) => (
               <div key={label} className="rounded-2xl border border-brand-border bg-brand-surface p-4 dark:bg-secondary">
                 <div className="text-2xl font-black text-foreground">{num(value)}</div>
                 <div className="text-sm text-muted-foreground">{label}</div>
               </div>
             ))}
-          </div>
+          </div>}
         </motion.header>
 
         {authLoading || loading ? (
@@ -202,7 +204,7 @@ export default function MyLearning() {
             <p className="mx-auto mt-3 max-w-xl text-danger-strong/80">{error || t.loadFail}</p>
             <Button className="mt-6 rounded-xl" onClick={() => window.location.reload()}>{t.retry}</Button>
           </section>
-        ) : !user ? (
+        ) : needsSignIn ? (
           <section className="rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-card">
             <GraduationCap className="mx-auto h-14 w-14 text-primary" />
             <h2 className="mt-5 text-2xl font-black">{t.signInTitle}</h2>

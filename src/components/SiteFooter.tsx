@@ -1,4 +1,5 @@
-import { ChartNoAxesColumnIncreasing, Facebook, Linkedin, Twitter, Youtube } from "lucide-react";
+import { Facebook, Linkedin, Twitter, Youtube } from "lucide-react";
+import Logo from "./Logo";
 import { Link, useLocation } from "react-router-dom";
 import BackToTop from "@/components/BackToTop";
 import { useT } from "@/i18n/lang";
@@ -21,7 +22,7 @@ const T = {
     accept: "We accept",
   },
   bn: {
-    tagline: "Growth with Data & AI",
+    tagline: "ডেটা ও এআই দিয়ে এগিয়ে চলুন",
     site: "সাইটের ফুটার",
     quick: "দ্রুত লিংক",
     courses: "কোর্সসমূহ",
@@ -39,7 +40,7 @@ const T = {
 
 const ICONS = { Facebook, YouTube: Youtube, LinkedIn: Linkedin, X: Twitter };
 const link =
-  "text-muted-foreground transition-colors hover:text-foreground rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "inline-flex min-h-10 items-center sm:min-h-0 text-muted-foreground transition-colors hover:text-foreground rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const SiteFooter = () => {
   const t = useT(T);
@@ -59,9 +60,8 @@ const SiteFooter = () => {
       <h2 className="sr-only">{t.site}</h2>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div className="space-y-3">
-          <Link to="/" className={`inline-flex items-center gap-2 font-display text-xl font-bold text-primary ${link}`}>
-            <ChartNoAxesColumnIncreasing className="h-6 w-6" aria-hidden="true" />
-            DataEntropy
+          <Link to="/" aria-label="DataEntropy" className={`inline-flex items-center ${link}`}>
+            <Logo size="sm" />
           </Link>
           <p className="text-sm text-muted-foreground">{t.tagline}</p>
         </div>

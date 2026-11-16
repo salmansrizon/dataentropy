@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Play, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useLang, useT } from "@/i18n/lang";
@@ -14,7 +14,7 @@ const T = {
     sub: "Learn Data Analytics, BI and AI and build a future-ready career.",
     cta: "Browse courses", video: "Watch video",
     students: "learners", loved: "Learners love learning with us", generic: "Learn alongside thousands of learners",
-    grow: "Grow Your Career",
+    grow: "Grow Your Career", motto: "Learn. Build. Grow.",
     alt: "Illustrative portrait of a data professional beside an analytics workspace",
   },
   bn: {
@@ -22,7 +22,7 @@ const T = {
     sub: "Data Analytics, BI এবং AI শিখে গড়ে তুলুন একটি ভবিষ্যৎ-প্রস্তুত ক্যারিয়ার।",
     cta: "কোর্স দেখে শুরু করুন", video: "ভিডিও দেখুন",
     students: "শিক্ষার্থী", loved: "শিক্ষার্থী আমাদের ভালোবাসার সাথে", generic: "হাজারো শিক্ষার্থীর সাথে শিখুন",
-    grow: "Grow Your Career",
+    grow: "ক্যারিয়ার গড়ুন", motto: "শিখুন। গড়ুন। এগিয়ে যান।",
     alt: "অ্যানালিটিক্স ওয়ার্কস্পেসের পাশে একজন ডেটা প্রফেশনালের চিত্র",
   },
 };
@@ -85,26 +85,46 @@ export default function LandingHero() {
           )}
         </div>
 
-        <div className="relative mx-auto w-full max-w-md">
-          {/* edges fade into the hero background (mask), so the photo has no visible border */}
-          <img src="/images/data-professional-hero.jpg" alt={t.alt} width={800} height={1200} fetchPriority="high" className="hero-photo-fade relative z-10 block h-auto w-full" />
+        <div className="relative mx-auto w-full max-w-md pb-6 pt-10">
+          {/* Shaped backdrop: organic brand blob + orbit ring + dot grid, so the portrait sits on a bold, intentional shape */}
+          <svg aria-hidden="true" viewBox="0 0 500 500" className="pointer-events-none absolute -left-6 top-14 z-0 h-auto w-[calc(100%+2rem)]">
+            <defs>
+              <linearGradient id="hero-blob" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" style={{ stopColor: "hsl(var(--brand-blue))" }} />
+                <stop offset="55%" style={{ stopColor: "hsl(var(--brand-indigo))" }} />
+                <stop offset="100%" style={{ stopColor: "hsl(var(--brand-purple))" }} />
+              </linearGradient>
+            </defs>
+            <path fill="url(#hero-blob)" opacity="0.9" d="M402 116c45 46 66 117 50 182-16 64-69 121-133 147-64 27-140 22-196-12-57-35-95-99-96-165-1-65 35-133 89-176 55-43 128-62 192-50 36 7 70 30 94 74z" />
+            <circle cx="250" cy="250" r="232" fill="none" style={{ stroke: "hsl(var(--brand-purple) / 0.35)" }} strokeWidth="1.5" strokeDasharray="4 10" />
+          </svg>
+          <div aria-hidden="true" className="hero-dots pointer-events-none absolute -right-6 bottom-16 z-0 h-24 w-24" />
 
-          <div aria-hidden className="landing-float absolute left-0 top-10 z-20 hidden rounded-2xl border border-brand-border bg-card p-3 shadow-lg sm:block">
+          {/* Portrait framed in an arch window */}
+          <div className="relative z-10 ml-auto mr-[6%] w-[70%] overflow-hidden rounded-b-[2.5rem] rounded-t-full shadow-pop ring-4 ring-card">
+            <img src="/images/data-professional-hero.jpg" alt={t.alt} width={800} height={1200} fetchPriority="high" className="block aspect-[4/5] h-auto w-full object-cover object-[62%_18%]" />
+          </div>
+
+          <div aria-hidden className="landing-float absolute left-2 top-28 z-20 hidden rounded-2xl border border-brand-border bg-card p-3 shadow-lg sm:block">
             <div className="flex h-12 items-end gap-1.5">
               {BARS.map((h, i) => <span key={i} className="w-2.5 rounded-sm bg-brand-purple" style={{ height: `${h}%`, opacity: 0.45 + i * 0.13 }} />)}
             </div>
           </div>
-          <div aria-hidden className="landing-float-b absolute -left-4 top-1/2 z-20 hidden rounded-2xl border border-brand-border bg-card p-3 shadow-lg sm:block">
+          <div aria-hidden className="landing-float-b absolute left-10 bottom-20 z-20 hidden rounded-2xl border border-brand-border bg-card p-3 shadow-lg sm:block">
             <div className="landing-donut h-14 w-14 rounded-full" />
           </div>
-          <div aria-hidden className="landing-float-c absolute right-0 top-4 z-20 hidden items-center gap-1 rounded-full border border-brand-border bg-card px-3 py-1.5 text-xs font-semibold text-brand-purple shadow-lg sm:flex">
+          <div aria-hidden className="landing-float-c absolute -right-6 bottom-36 z-20 hidden items-center gap-1 rounded-full border border-brand-border bg-card px-3 py-1.5 text-xs font-semibold text-brand-purple shadow-lg sm:flex">
             {t.grow} <ArrowUpRight className="h-3.5 w-3.5" />
           </div>
-          <div aria-hidden className="landing-float-d absolute right-6 top-20 z-0 hidden sm:block">
-            <span className="block h-0.5 w-6 -rotate-45 rounded bg-primary" />
-            <span className="ml-3 mt-1.5 block h-0.5 w-4 rounded bg-primary" />
-            <span className="ml-1 mt-1.5 block h-0.5 w-5 rotate-45 rounded bg-primary" />
-          </div>
+
+          {/* Paper plane with a dashed flight trail (drawn once) + tilted motto */}
+          <svg aria-hidden="true" viewBox="0 0 160 80" className="hero-trail pointer-events-none absolute -right-4 -top-2 z-20 hidden w-40 sm:block">
+            <path d="M4 70 C 40 70, 60 20, 100 30 S 140 20, 150 10" fill="none" style={{ stroke: "hsl(var(--brand-purple))" }} strokeWidth="2" strokeDasharray="5 6" strokeLinecap="round" />
+          </svg>
+          <Send aria-hidden="true" className="absolute -top-4 right-0 z-20 hidden h-7 w-7 -rotate-12 text-primary sm:block" />
+          <p aria-hidden="true" className="absolute -right-6 bottom-6 z-20 hidden -rotate-6 rounded-xl bg-card/90 px-3 py-1.5 text-sm font-extrabold text-primary shadow-lg backdrop-blur sm:block">
+            {t.motto}
+          </p>
         </div>
       </div>
 

@@ -15,6 +15,7 @@ import { useT } from '@/i18n/lang';
 
 const T = {
   en: {
+    errInvalid: 'Incorrect email or password.', errUnconfirmed: 'Email not confirmed yet — check your inbox.', errExists: 'An account with this email already exists.', errShortPw: 'Password must be at least 6 characters.', errRate: 'Too many attempts. Please wait a moment and try again.', errNetwork: 'Network problem — check your connection and try again.',
     error: 'Error', success: 'Success', signedIn: 'Signed in successfully!', checkEmail: 'Check your email for verification link!',
     story: 'Your next chapter starts with practice.',
     storyBody: 'Sign in to keep your learning progress, return to your projects, and continue building practical data skills.',
@@ -24,6 +25,7 @@ const T = {
     signingIn: 'Signing in...', creating: 'Creating account...',
   },
   bn: {
+    errInvalid: 'ইমেইল বা পাসওয়ার্ড ভুল।', errUnconfirmed: 'ইমেইল এখনো যাচাই হয়নি — ইনবক্স দেখুন।', errExists: 'এই ইমেইলে আগেই একটি অ্যাকাউন্ট আছে।', errShortPw: 'পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।', errRate: 'অনেকবার চেষ্টা হয়েছে। একটু পরে আবার চেষ্টা করুন।', errNetwork: 'নেটওয়ার্ক সমস্যা — সংযোগ দেখে আবার চেষ্টা করুন।',
     error: 'সমস্যা হয়েছে', success: 'সফল', signedIn: 'সাইন ইন হয়েছে!', checkEmail: 'ভেরিফিকেশন লিংকের জন্য আপনার email দেখুন!',
     story: 'প্র্যাকটিসের মধ্য দিয়েই শুরু হোক আপনার পরের অধ্যায়।',
     storyBody: 'সাইন ইন করে আপনার শেখার অগ্রগতি ধরে রাখুন, প্রজেক্টে ফিরে যান এবং ব্যবহারিক ডেটা স্কিল গড়ে তুলুন।',
@@ -36,6 +38,17 @@ const T = {
 
 const Auth = () => {
   const t = useT(T);
+  // Supabase returns English messages; show a translated, human one (fall back to the raw text).
+  const authError = (msg: string) => {
+    const m = msg.toLowerCase();
+    if (m.includes('invalid login')) return t.errInvalid;
+    if (m.includes('not confirmed')) return t.errUnconfirmed;
+    if (m.includes('already registered') || m.includes('already exists')) return t.errExists;
+    if (m.includes('at least 6')) return t.errShortPw;
+    if (m.includes('rate limit') || m.includes('too many')) return t.errRate;
+    if (m.includes('fetch') || m.includes('network')) return t.errNetwork;
+    return msg;
+  };
   const reduce = useReducedMotion();
   const rise = (delay: number) => reduce ? {} : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay } };
   const [email, setEmail] = useState('');
@@ -62,7 +75,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: t.error,
-        description: error.message,
+        description: authError(error.message),
         variant: "destructive",
       });
     } else {
@@ -84,7 +97,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: t.error,
-        description: error.message,
+        description: authError(error.message),
         variant: "destructive",
       });
     } else {
@@ -100,7 +113,7 @@ const Auth = () => {
   return (
     <div className="auth-layout">
       <motion.div className="auth-story" {...rise(0)}>
-        <Link to="/">DataEntropy</Link>
+        <Link to="/" className="inline-flex min-h-11 items-center">DataEntropy</Link>
         <h2>{t.story}</h2>
         <p>{t.storyBody}</p>
         <div aria-hidden="true">
@@ -115,7 +128,7 @@ const Auth = () => {
         </CardHeader>
         
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid h-12 w-full grid-cols-2 [&>button]:h-10">
             <TabsTrigger value="signin">{t.signIn}</TabsTrigger>
             <TabsTrigger value="signup">{t.signUp}</TabsTrigger>
           </TabsList>

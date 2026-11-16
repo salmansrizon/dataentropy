@@ -535,7 +535,16 @@ html[lang="bn"] .bg-clip-text { padding-bottom: 0.08em; }
  * with the entrance easing cubic-bezier(0.24, 1, 0.4, 1).
  * Components that draw their own ring keep `focus-visible:outline-none`, so no double ring.
  */
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+/* Skip menu items, listbox options and tabindex="-1" targets (Radix roving focus) — they show
+   their own highlight background; an outline there reads as a stray border. */
+:where(a, button, input, select, textarea, summary, [tabindex]):where(:not([tabindex="-1"], [role^="menuitem"], [role="option"])):focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 3px;
+}
+
+/* Lottie illustrations ship with a pale rounded-square backdrop baked in.
+   Fade the outer band so that edge disappears on any section background. */
+.lottie-soft-edges {
+  -webkit-mask-image: radial-gradient(closest-side, black 70%, transparent 100%);
+  mask-image: radial-gradient(closest-side, black 70%, transparent 100%);
 }

@@ -63,7 +63,7 @@ export default function WhyDataEntropy() {
           </RevealGroup>
         </div>
         <Reveal className="relative mx-auto w-full max-w-md" delay={0.1}>
-          <div aria-hidden="true" className="absolute inset-0 rounded-[40%] bg-brand-surface" />
+          <div aria-hidden="true" className="why-glow absolute -inset-6" />
           <LottieAnimation src="/animations/data-insights.json" className="relative aspect-square w-full" />
           <Lightbulb className="landing-bulb absolute right-2 top-2 h-10 w-10 text-brand-purple" aria-hidden="true" />
         </Reveal>

@@ -31,7 +31,7 @@ const T = {
 };
 
 const ctaClass = (isFree: boolean) =>
-  isFree ? "bg-primary text-primary-foreground hover:bg-primary-hover" : "bg-brand-blue text-primary-foreground hover:bg-brand-blue-hover";
+  isFree ? "bg-primary text-primary-foreground hover:bg-primary-hover" : "bg-primary text-primary-foreground hover:bg-primary-hover";
 
 const Price = ({ course, isFree, compact }: { course: Course; isFree: boolean; compact?: boolean }) => {
   const t = useT(T);

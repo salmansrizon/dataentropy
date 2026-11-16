@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRight, Star, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import LottieAnimation from "@/components/LottieAnimation";
 import { useLang, useT } from "@/i18n/lang";
 import { CountUp } from "./motion";
 import type { Course } from "./types";
@@ -40,60 +38,57 @@ const CourseHero = ({ course, totalLessons, reviewAverage, reviewCount, isFree, 
   const level = course.difficulty_level || "beginner";
   const summary = course.short_description || `${(course.description ?? "").substring(0, 160)}...`;
 
+  // Minimal hero: no card chrome, no decoration — breadcrumb, quiet meta line, title, summary, two actions.
+  const meta = [
+    isFree ? t.free : null,
+    t.level[level] ?? level,
+    totalLessons ? `${num(totalLessons)} ${t.lessons}` : null,
+    course.duration_hours ? `${num(Number(course.duration_hours))} ${t.hours}` : t.selfPaced,
+    course.category?.name ?? null,
+  ].filter(Boolean) as string[];
+
   return (
     <motion.section
-      initial={reduce ? false : { opacity: 0, y: 16 }}
+      initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="relative overflow-hidden bg-brand-grid bg-brand-surface rounded-3xl border border-brand-border p-6 sm:p-10"
+      transition={{ duration: 0.4 }}
+      className="py-2"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute -right-6 top-1/2 hidden -translate-y-1/2 opacity-80 lg:block">
-        <LottieAnimation src="/animations/learning-journey.json" className="h-72 w-72 xl:h-80 xl:w-80" />
-      </div>
-      <nav aria-label={t.breadcrumb} className="relative mb-5 flex items-center gap-1.5 text-sm text-muted-foreground">
+      <nav aria-label={t.breadcrumb} className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link to="/courses" className="shrink-0 whitespace-nowrap hover:text-foreground">{t.all}</Link>
-        <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span className="truncate text-foreground">{course.title}</span>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="truncate">{course.title}</span>
       </nav>
 
-      <div className="relative mb-4 flex flex-wrap items-center gap-2">
-        {isFree && <Badge className="bg-primary/10 text-primary hover:bg-primary/10">{t.free}</Badge>}
-        <Badge variant="outline" className="">{t.level[level] ?? level}</Badge>
-        <Badge variant="outline">{totalLessons ? <CountUp value={totalLessons} format={num} /> : "—"} {t.lessons}</Badge>
-        <Badge variant="outline">{course.duration_hours ? `${num(Number(course.duration_hours))} ${t.hours}` : t.selfPaced}</Badge>
-        {course.category?.name && <Badge variant="outline">{course.category.name}</Badge>}
-      </div>
+      <p className="mb-3 text-sm font-medium text-primary">{meta.join(" · ")}</p>
 
-      <h1 className="page-heading relative mb-4 text-3xl font-extrabold leading-tight text-foreground md:text-4xl lg:max-w-[calc(100%-14rem)] lg:text-[42px]">{course.title}</h1>
+      <h1 className="mb-4 max-w-3xl text-3xl font-extrabold leading-tight text-foreground md:text-4xl">{course.title}</h1>
 
-      <div className="relative mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        {reviewAverage === null ? (
-          <span className="text-muted-foreground">{t.noReviews}</span>
-        ) : (
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-card px-3 py-1 font-semibold"
-            aria-label={t.rating(num(Number(reviewAverage.toFixed(1))), num(reviewCount))}
-          >
-            <Star className="h-4 w-4 fill-primary text-primary" aria-hidden="true" />
-            {reviewAverage.toFixed(1)}
-            <span className="font-normal text-muted-foreground">(<CountUp value={reviewCount} format={num} />)</span>
-          </span>
-        )}
-        {(course.student_count ?? 0) > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Users className="h-4 w-4" aria-hidden="true" />
-            <CountUp value={course.student_count ?? 0} format={num} /> {t.learners}
-          </span>
-        )}
-      </div>
+      {(reviewAverage !== null || (course.student_count ?? 0) > 0) && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          {reviewAverage !== null && (
+            <span className="inline-flex items-center gap-1.5" aria-label={t.rating(num(Number(reviewAverage.toFixed(1))), num(reviewCount))}>
+              <Star className="h-4 w-4 fill-primary text-primary" aria-hidden="true" />
+              <span className="font-semibold text-foreground">{reviewAverage.toFixed(1)}</span>
+              (<CountUp value={reviewCount} format={num} />)
+            </span>
+          )}
+          {(course.student_count ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-4 w-4" aria-hidden="true" />
+              <CountUp value={course.student_count ?? 0} format={num} /> {t.learners}
+            </span>
+          )}
+        </div>
+      )}
 
-      <p className="relative mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{summary}</p>
+      <p className="mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground">{summary}</p>
 
-      <div className="relative flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" onClick={onEnroll} className="h-14 rounded-xl bg-brand-blue px-8 text-primary-foreground hover:bg-brand-blue-hover">
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button size="lg" onClick={onEnroll} className="h-12 rounded-full px-8">
           {isFree ? t.startFree : t.enroll}
         </Button>
-        <Button size="lg" variant="outline" onClick={onSeeCurriculum} className="h-14 rounded-xl px-8">
+        <Button size="lg" variant="ghost" onClick={onSeeCurriculum} className="h-12 rounded-full px-6 text-primary hover:bg-primary/10">
           {t.curriculum}
         </Button>
       </div>
