@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, Lightbulb } from 'lucide-react';
 import { track } from '@/services/funnel';
+import { useT } from '@/i18n/lang';
 import type { Topic } from '@/hooks/useTopics';
 import type { Surface } from '@/services/funnel';
 
@@ -12,6 +13,11 @@ import type { Surface } from '@/services/funnel';
 // the Step's job) and a failed Checkpoint (open — the learner just asked the
 // question this answers by getting it wrong).
 
+const T = {
+  en: { sub: 'What it is, why it matters, and an analogy', what: 'What it is', why: 'Why it matters', how: 'How it works', plain: 'In plain terms' },
+  bn: { sub: 'এটি কী, কেন গুরুত্বপূর্ণ, আর একটি উপমা', what: 'এটি কী', why: 'কেন গুরুত্বপূর্ণ', how: 'কীভাবে কাজ করে', plain: 'সহজ ভাষায়' },
+};
+
 interface Props {
   topic: Topic;
   surface: Surface;
@@ -19,6 +25,7 @@ interface Props {
 }
 
 const TopicCard = ({ topic, surface, defaultOpen = false }: Props) => {
+  const t = useT(T);
   const [open, setOpen] = useState(defaultOpen);
   const [tracked, setTracked] = useState(false);
 
@@ -42,17 +49,17 @@ const TopicCard = ({ topic, surface, defaultOpen = false }: Props) => {
         <Lightbulb className="w-4 h-4 text-primary shrink-0" />
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-foreground truncate">{topic.title}</span>
-          <span className="block text-[11px] text-muted-foreground">What it is, why it matters, and an analogy</span>
+          <span className="block text-[11px] text-muted-foreground">{t.sub}</span>
         </span>
         <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div className="px-3 pb-3 space-y-3 border-t border-border/60 pt-4">
-          <Section label="What it is" body={topic.what_it_is} />
-          <Section label="Why it matters" body={topic.why_it_matters} />
-          <Section label="How it works" body={topic.how_it_works} />
-          <Section label="In plain terms" body={topic.analogy} accent />
+          <Section label={t.what} body={topic.what_it_is} />
+          <Section label={t.why} body={topic.why_it_matters} />
+          <Section label={t.how} body={topic.how_it_works} />
+          <Section label={t.plain} body={topic.analogy} accent />
         </div>
       )}
     </div>

@@ -19,12 +19,14 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				display: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				sans: ['"Plus Jakarta Sans"', '"Noto Sans Bengali"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['"Plus Jakarta Sans"', '"Noto Sans Bengali"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 			},
 			fontSize: { '3xl': ['36px', { lineHeight: '40px' }] },
             spacing: { 'design-1': '4px', 'design-2': '6px', 'design-3': '8px', 'design-4': '10px', 'design-5': '16px', 'design-6': '20px', 'design-7': '24px' },
-            transitionDuration: { instant: '150ms', fast: '300ms' },
+            // Astryx motion: fast 125ms, medium 300ms, slow 700ms; entrance easing as the default curve
+            transitionDuration: { instant: '125ms', fast: '300ms', DEFAULT: '125ms', slow: '700ms' },
+            transitionTimingFunction: { DEFAULT: 'cubic-bezier(0.24, 1, 0.4, 1)', entrance: 'cubic-bezier(0.24, 1, 0.4, 1)', exit: 'cubic-bezier(0.3, 0, 0.6, 0.6)' },
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -64,6 +66,12 @@ export default {
 				scan: 'hsl(var(--surface-scan))',
 				scrim: 'hsl(var(--scrim))',
 				brand: {
+                    blue: 'hsl(var(--brand-blue))',
+                    'blue-hover': 'hsl(var(--brand-blue-hover))',
+                    indigo: 'hsl(var(--brand-indigo))',
+                    purple: 'hsl(var(--brand-purple))',
+                    surface: 'hsl(var(--brand-surface))',
+                    border: 'hsl(var(--brand-border))',
 					bkash: {
 						DEFAULT: 'hsl(var(--brand-bkash))',
 						foreground: 'hsl(var(--brand-bkash-foreground))',
@@ -131,15 +139,22 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			// Astryx radius scale: inner 6px, element 10px (--radius), container 12px, page 28px
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: '8px',
+				sm: '0.375rem',
+				xl: '0.75rem',
+				'2xl': '0.75rem',
+				'3xl': '1.75rem',
                 full: '9999px'
 			},
 			backgroundImage: {
+                'brand-gradient': 'var(--brand-gradient)',
+                'brand-grid': 'var(--brand-grid)',
 			},
 			boxShadow: {
+                brand: 'var(--shadow-brand)',
 				'card': 'var(--shadow-card)',
 				'hover': 'var(--shadow-hover)',
 				'pop': 'var(--shadow-pop)'

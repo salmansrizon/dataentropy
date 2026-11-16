@@ -1,0 +1,13 @@
+/* One decorative loop per section: a soft shimmer travelling along the drawn track. */
+.plan-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary-foreground) / 0.7), transparent);
+  transform: translateX(-120%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plan-track::after { animation: plan-shimmer 2.8s ease-in-out 1.4s infinite; }
+}
+@keyframes plan-shimmer { to { transform: translateX(420%); } }

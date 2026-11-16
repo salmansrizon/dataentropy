@@ -88,15 +88,16 @@ function renderBlock(block: BlogContent, index: number): React.ReactNode {
         </figure>
       );
 
-    case 'heading':
+    case 'heading': {
       const HeadingTag = `h${block.level}` as keyof JSX.IntrinsicElements;
       return (
         <HeadingTag key={index} className="font-bold mt-6 mb-3">
           {block.content}
         </HeadingTag>
       );
+    }
 
-    case 'list':
+    case 'list': {
       const ListTag = block.ordered ? 'ol' : 'ul';
       return (
         <ListTag key={index} className={cn('mb-4 pl-6', block.ordered ? 'list-decimal' : 'list-disc')}>
@@ -105,6 +106,7 @@ function renderBlock(block: BlogContent, index: number): React.ReactNode {
           ))}
         </ListTag>
       );
+    }
 
     case 'quote':
       return (

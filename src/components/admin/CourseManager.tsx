@@ -19,6 +19,8 @@ import ListPager from "./ListPager";
 import { createRepository } from "@/integrations/supabase/repository";
 import { courseConfig, type Course as CourseRow } from "@/adapters/entityConfigs";
 import { ImageUploadField } from "./ImageUploadField";
+import SalesPageEditor from "./SalesPageEditor";
+import { validateSalesPage } from "@/pages/course-details/salesPage";
 
 const courseRepository = createRepository(courseConfig);
 
@@ -180,6 +182,7 @@ interface FormData {
   refund_policy: string;
   payment_verification_time: string;
   support_contact: string;
+  sales_page: Record<string, unknown>;
 }
 
 const initialFormData: FormData = {
@@ -213,6 +216,7 @@ const initialFormData: FormData = {
   refund_policy: "",
   payment_verification_time: "",
   support_contact: "",
+  sales_page: {},
 };
 
 export default function CourseManager() {
@@ -245,6 +249,11 @@ export default function CourseManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const salesCheck = validateSalesPage(formData.sales_page);
+    if (salesCheck.ok === false) {
+      showError(`Sales page: ${salesCheck.errors.slice(0, 3).join(" | ")}`);
+      return;
+    }
     try {
       let courseId: string | null = editingCourse?.id || null;
 
@@ -282,6 +291,7 @@ export default function CourseManager() {
             refund_policy: formData.refund_policy || null,
             payment_verification_time: formData.payment_verification_time || null,
             support_contact: formData.support_contact || null,
+            ...({ sales_page: salesCheck.value } as any), // generated types lack this column
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -319,6 +329,7 @@ export default function CourseManager() {
             refund_policy: formData.refund_policy || null,
             payment_verification_time: formData.payment_verification_time || null,
             support_contact: formData.support_contact || null,
+            ...({ sales_page: salesCheck.value } as any), // generated types lack this column
           })
           .select('id')
           .single();
@@ -693,6 +704,7 @@ export default function CourseManager() {
         refund_policy: courseData.refund_policy || "",
         payment_verification_time: courseData.payment_verification_time || "",
         support_contact: courseData.support_contact || "",
+        sales_page: courseData.sales_page && typeof courseData.sales_page === "object" ? courseData.sales_page : {},
       });
       setShowDialog(true);
     } catch (error) {
@@ -1154,6 +1166,14 @@ export default function CourseManager() {
                   </div>
                 </div>
 
+                {/* Sales page (public /course/:id sections) */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <h3 className="text-lg font-semibold">Sales page</h3>
+                  <SalesPageEditor
+                    value={formData.sales_page}
+                    onChange={(next) => setFormData((prev) => ({ ...prev, sales_page: next }))}
+                  />
+                </div>
 
                 {/* Course Content Management */}
                 <div className="border rounded-lg p-4 space-y-4">

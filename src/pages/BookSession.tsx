@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { format, addMinutes } from "date-fns";
 import Navbar from "@/components/Navbar";
-import ScrollReveal from "@/components/ScrollReveal";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useLang, useT } from "@/i18n/lang";
+import { LivePulse } from "@/components/LivePulse";
 import PageIntro from "@/components/PageIntro";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,9 +24,58 @@ import { usePageView } from "@/hooks/usePageView";
 
 type Step = 'details' | 'confirmed';
 
+const T = {
+  en: {
+    eyebrow: "Consultation · Work with a practitioner", title: "Leave with a clear next move.",
+    desc: "Bring a project blocker, interview plan, or career decision. Choose a focused session and leave with an actionable plan.",
+    selectSession: "Select Session", min: "min", free: "Free", expand: "Toggle description",
+    yourDetails: "Your Details", fillInfo: "Fill in your information and pick a slot",
+    name: "Name *", namePh: "Your full name", email: "Email *", whatsapp: "WhatsApp Number", phone: "Phone Number",
+    date: "Select Date *", pickDate: "Pick a date", timeSlot: "Time Slot *", selectTime: "Select time", booked: "(Booked)", noSlots: "No available slots",
+    payMethod: "Payment Method *", bkash: "bKash", nagad: "Nagad", expired: "Expired",
+    left: "left to pay", fee: "Fee:", qrAlt: "QR Code", scan: "Scan the QR code or send money directly with proper details as a reference.",
+    txnLabel: "Enter Transaction ID", txnPh: "e.g., 9F8G7H6A5B",
+    freeTitle: "This is a Free Session", freeBody: "No payment required. Your booking will be confirmed immediately.",
+    winExpired: "Payment window expired.", reload: "Reload Page to Try Again",
+    confirmFree: "Confirm Free Booking", confirm: "Confirm Booking",
+    sessionConfirmed: "Session Confirmed!", submitted: "Booking Submitted!",
+    freeDone1: "Your free session has been booked and confirmed. We'll send a reminder to ", paidDone1: "Your session booking has been submitted. We'll verify your payment and send a confirmation to ",
+    bookingId: "Booking ID", txnId: "Transaction ID", status: "Status", confirmedBadge: "Confirmed", pendingBadge: "Pending Verification", home: "Back to Home",
+    errTitle: "Error", errFill: "Please fill in all required fields", errMethod: "Please select a payment method.",
+    errTxn: "Transaction ID is strictly required for paid bookings. Check your SMS.", errExpired: "Payment window has expired. Please reload to try again.", errFail: "Failed to create booking",
+    okTitle: "Booking Confirmed!", okFree: "Your free session has been booked successfully.", okPaid: "Your session booking has been submitted. We'll verify your payment and confirm shortly.",
+  },
+  bn: {
+    eyebrow: "কনসাল্টেশন · প্র্যাকটিশনারের সাথে কাজ করুন", title: "পরের ধাপটা স্পষ্ট করে নিয়ে ফিরুন।",
+    desc: "প্রজেক্টের সমস্যা, ইন্টারভিউ প্ল্যান বা ক্যারিয়ারের সিদ্ধান্ত নিয়ে আসুন। একটি ফোকাসড সেশন বেছে নিন এবং একটি কাজের পরিকল্পনা নিয়ে ফিরুন।",
+    selectSession: "সেশন বেছে নিন", min: "মিনিট", free: "ফ্রি", expand: "বিবরণ দেখান/লুকান",
+    yourDetails: "আপনার তথ্য", fillInfo: "তথ্য দিন এবং একটি স্লট বেছে নিন",
+    name: "নাম *", namePh: "আপনার পুরো নাম", email: "ইমেইল *", whatsapp: "হোয়াটসঅ্যাপ নম্বর", phone: "ফোন নম্বর",
+    date: "তারিখ বেছে নিন *", pickDate: "তারিখ নির্বাচন করুন", timeSlot: "সময় *", selectTime: "সময় বেছে নিন", booked: "(বুকড)", noSlots: "কোনো স্লট খালি নেই",
+    payMethod: "পেমেন্ট মাধ্যম *", bkash: "বিকাশ", nagad: "নগদ", expired: "শেষ",
+    left: "বাকি পেমেন্টের জন্য", fee: "ফি:", qrAlt: "QR কোড", scan: "QR কোড স্ক্যান করুন অথবা সঠিক তথ্যসহ সরাসরি টাকা পাঠান।",
+    txnLabel: "ট্রানজ্যাকশন আইডি দিন", txnPh: "যেমন, 9F8G7H6A5B",
+    freeTitle: "এটি একটি ফ্রি সেশন", freeBody: "কোনো পেমেন্ট লাগবে না। আপনার বুকিং সঙ্গে সঙ্গে নিশ্চিত হবে।",
+    winExpired: "পেমেন্টের সময় শেষ হয়ে গেছে।", reload: "আবার চেষ্টা করতে পেজ রিলোড করুন",
+    confirmFree: "ফ্রি বুকিং নিশ্চিত করুন", confirm: "বুকিং নিশ্চিত করুন",
+    sessionConfirmed: "সেশন নিশ্চিত হয়েছে!", submitted: "বুকিং জমা হয়েছে!",
+    freeDone1: "আপনার ফ্রি সেশন বুক ও নিশ্চিত হয়েছে। রিমাইন্ডার পাঠানো হবে ", paidDone1: "আপনার সেশন বুকিং জমা হয়েছে। আমরা পেমেন্ট যাচাই করে নিশ্চিতকরণ পাঠাব ",
+    bookingId: "বুকিং আইডি", txnId: "ট্রানজ্যাকশন আইডি", status: "অবস্থা", confirmedBadge: "নিশ্চিত", pendingBadge: "যাচাই চলছে", home: "হোমে ফিরে যান",
+    errTitle: "ত্রুটি", errFill: "অনুগ্রহ করে সব আবশ্যক ঘর পূরণ করুন", errMethod: "অনুগ্রহ করে পেমেন্ট মাধ্যম বেছে নিন।",
+    errTxn: "পেইড বুকিংয়ে ট্রানজ্যাকশন আইডি আবশ্যক। আপনার SMS দেখুন।", errExpired: "পেমেন্টের সময় শেষ। আবার চেষ্টা করতে পেজ রিলোড করুন।", errFail: "বুকিং তৈরি করা যায়নি",
+    okTitle: "বুকিং নিশ্চিত হয়েছে!", okFree: "আপনার ফ্রি সেশন সফলভাবে বুক হয়েছে।", okPaid: "আপনার সেশন বুকিং জমা হয়েছে। আমরা পেমেন্ট যাচাই করে শীঘ্রই নিশ্চিত করব।",
+  },
+};
+
 const BookSession = () => {
   usePageView("/book-session");
   const { toast } = useToast();
+  const t = useT(T);
+  const { num, date: fmtDate } = useLang();
+  const reduce = useReducedMotion();
+  const fade = reduce
+    ? {}
+    : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 }, transition: { duration: 0.25 } };
   const { sessionTypes, paymentSettings, unavailableSlots, isDateUnavailable, getAllTimeSlotsWithAvailability, availabilitySettings } = useBookingData();
   const [step, setStep] = useState<Step>('details');
   const [selectedSessionType, setSelectedSessionType] = useState<string>('');
@@ -68,21 +119,21 @@ const BookSession = () => {
   const handleBookingSubmit = async () => {
     const paymentMethodRequired = !isFree;
     if (!formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType || (paymentMethodRequired && !formData.paymentMethod)) {
-      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      toast({ title: t.errTitle, description: t.errFill, variant: "destructive" });
       return;
     }
 
     if (!isFree) {
       if (!formData.paymentMethod) {
-        toast({ title: "Error", description: "Please select a payment method.", variant: "destructive" });
+        toast({ title: t.errTitle, description: t.errMethod, variant: "destructive" });
         return;
       }
       if (!formData.transactionId || formData.transactionId.trim() === "") {
-        toast({ title: "Error", description: "Transaction ID is strictly required for paid bookings. Check your SMS.", variant: "destructive" });
+        toast({ title: t.errTitle, description: t.errTxn, variant: "destructive" });
         return;
       }
       if (timeLeft === 'Expired') {
-        toast({ title: "Error", description: "Payment window has expired. Please reload to try again.", variant: "destructive" });
+        toast({ title: t.errTitle, description: t.errExpired, variant: "destructive" });
         return;
       }
     }
@@ -107,9 +158,9 @@ const BookSession = () => {
       if (error) throw error;
       if (data) setBookingId(data.id);
       setStep('confirmed');
-      toast({ title: "Booking Confirmed!", description: isFree ? "Your free session has been booked successfully." : "Your session booking has been submitted. We'll verify your payment and confirm shortly." });
+      toast({ title: t.okTitle, description: isFree ? t.okFree : t.okPaid });
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
+      toast({ title: t.errTitle, description: error.message || t.errFail, variant: "destructive" });
     }
   };
 
@@ -125,23 +176,24 @@ const BookSession = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-24 pb-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <PageIntro eyebrow="Learn with a practitioner" title="Book a Private Session" description="Bring your project, interview preparation, or career questions. Choose a session and a time that works for you." animation="/animations/booking-schedule.json" />
+        <PageIntro eyebrow={t.eyebrow} title={t.title} description={t.desc} animation="/animations/booking-schedule.json" />
 
         {/* Header omitted from steps rendering because it's a single form now */}
 
         {/* Step 1: Details */}
+        <AnimatePresence mode="wait" initial={false}>
         {step === 'details' && (
-          <ScrollReveal direction="up" delay={0.2}>
+          <motion.div key="details" {...fade}>
             <div className="grid md:grid-cols-3 gap-6">
               {/* Session Types */}
               <div className="md:col-span-1 flex flex-col">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Select Session</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-4">{t.selectSession}</h3>
                 <div className="space-y-4 overflow-y-auto max-h-[650px] pr-2 pb-2 shrink-0">
                   {sessionTypes.map(st => (
                     <Card
                       key={st.id}
                       className={cn(
-                        "cursor-pointer transition-all border-2",
+                        "cursor-pointer transition-all border-2 hover:-translate-y-0.5 motion-reduce:transform-none",
                         selectedSessionType === st.id ? "border-primary shadow-hover" : "border-border hover:border-primary/40"
                       )}
                       onClick={() => {
@@ -153,14 +205,15 @@ const BookSession = () => {
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex items-center gap-2">
-                             <div className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
-                             </div>
+                             {selectedSessionType === st.id
+                               ? <LivePulse live />
+                               : <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-success" aria-hidden="true" />}
                              <h4 className="font-semibold text-foreground">{st.title}</h4>
                           </div>
                           <button 
                             type="button"
+                            aria-label={t.expand}
+                            aria-expanded={expandedCard === st.id}
                             className="text-muted-foreground hover:text-foreground hover:bg-muted p-1 rounded-full transition-colors flex-shrink-0"
                             onClick={(e) => { 
                               e.stopPropagation(); 
@@ -172,12 +225,12 @@ const BookSession = () => {
                         </div>
                         <p className={`text-sm text-muted-foreground mt-2 ${expandedCard === st.id ? '' : 'line-clamp-1'}`}>{st.description}</p>
                         <div className="flex items-center gap-3 mt-3">
-                          <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />{st.duration_minutes} min</Badge>
+                          <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />{num(st.duration_minutes)} {t.min}</Badge>
                           {st.is_paid ? (
-                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{num(Number(st.fee))}</Badge>
                           ) : (
                             <Badge className="bg-success-strong text-success-strong-foreground hover:bg-success-strong/90">
-                              <Tag className="h-3 w-3 mr-1" />Free
+                              <Tag className="h-3 w-3 mr-1" />{t.free}
                             </Badge>
                           )}
                         </div>
@@ -190,20 +243,20 @@ const BookSession = () => {
               {/* Form */}
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle>Your Details</CardTitle>
-                  <CardDescription>Fill in your information and pick a slot</CardDescription>
+                  <CardTitle>{t.yourDetails}</CardTitle>
+                  <CardDescription>{t.fillInfo}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Name *</Label>
+                      <Label>{t.name}</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input className="pl-9" placeholder="Your full name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} />
+                        <Input className="pl-9" placeholder={t.namePh} value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Email *</Label>
+                      <Label>{t.email}</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input className="pl-9" type="email" placeholder="your@email.com" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
@@ -212,14 +265,14 @@ const BookSession = () => {
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>WhatsApp Number</Label>
+                      <Label>{t.whatsapp}</Label>
                       <div className="relative">
                         <Smartphone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input className="pl-9" placeholder="01XXXXXXXXX" value={formData.whatsapp} onChange={e => setFormData(p => ({ ...p, whatsapp: e.target.value }))} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Phone Number</Label>
+                      <Label>{t.phone}</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input className="pl-9" placeholder="01XXXXXXXXX" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} />
@@ -229,12 +282,12 @@ const BookSession = () => {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Select Date *</Label>
+                      <Label>{t.date}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.date ? format(formData.date, "PPP") : "Pick a date"}
+                            {formData.date ? fmtDate(formData.date.toISOString(), { day: "numeric", month: "long", year: "numeric" }) : t.pickDate}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -250,17 +303,17 @@ const BookSession = () => {
                       </Popover>
                     </div>
                     <div className="space-y-2">
-                      <Label>Time Slot *</Label>
+                      <Label>{t.timeSlot}</Label>
                       <Select value={formData.time} onValueChange={v => setFormData(p => ({ ...p, time: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Select time" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t.selectTime} /></SelectTrigger>
                         <SelectContent>
-                          {getAllTimeSlotsWithAvailability(formData.date).map(t => (
-                            <SelectItem key={t.time} value={t.time} disabled={!t.available}>
-                              {t.time} (GMT+6) {!t.available && "(Booked)"}
+                          {getAllTimeSlotsWithAvailability(formData.date).map(slot => (
+                            <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
+                              {slot.time} (GMT+6) {!slot.available && t.booked}
                             </SelectItem>
                           ))}
                           {getAllTimeSlotsWithAvailability(formData.date).length === 0 && (
-                            <SelectItem value="" disabled>No available slots</SelectItem>
+                            <SelectItem value="" disabled>{t.noSlots}</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
@@ -270,7 +323,7 @@ const BookSession = () => {
                   {/* Only show payment method selector for paid sessions */}
                   {selectedSession && !isFree && (
                     <div className="space-y-2">
-                      <Label>Payment Method *</Label>
+                      <Label>{t.payMethod}</Label>
                       <div className="grid grid-cols-2 gap-3">
                         {(['bkash', 'nagad'] as const).map(method => (
                           <Button
@@ -286,7 +339,7 @@ const BookSession = () => {
                             onClick={() => handleSelectPaymentMethod(method)}
                           >
                             <CreditCard className="h-5 w-5 mr-2" />
-                            {method === 'bkash' ? 'bKash' : 'Nagad'}
+                            {method === 'bkash' ? t.bkash : t.nagad}
                           </Button>
                         ))}
                       </div>
@@ -300,10 +353,10 @@ const BookSession = () => {
                           <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
                              <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
                                 <Timer className="h-4 w-4" /> 
-                                {timeLeft} left to pay
+                                {timeLeft.replace(/\d/g, d => num(Number(d)))} {t.left}
                              </div>
                              <h4 className="font-semibold text-foreground text-sm">
-                               Fee: <span className="font-bold text-lg text-primary">৳{selectedSession.fee}</span>
+                               {t.fee} <span className="font-bold text-lg text-primary">৳{num(Number(selectedSession.fee))}</span>
                              </h4>
                           </div>
                           
@@ -315,7 +368,7 @@ const BookSession = () => {
                             <div className="mx-auto w-44 h-44 bg-scan p-2 rounded-xl shadow-sm my-4">
                               <img 
                                 src={formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code! : paymentSettings?.nagad_qr_code!} 
-                                alt={`${formData.paymentMethod} QR Code`} 
+                                alt={`${formData.paymentMethod === 'bkash' ? t.bkash : t.nagad} ${t.qrAlt}`} 
                                 className="w-full h-full object-contain"
                                 loading="lazy"
                                 decoding="async"
@@ -324,7 +377,7 @@ const BookSession = () => {
                           )}
                           
                           <p className="text-sm font-medium opacity-80 max-w-[280px] mx-auto">
-                            Scan the QR code or send money directly with proper details as a reference.
+                            {t.scan}
                           </p>
 
                           {paymentSettings?.additional_instructions && (
@@ -334,12 +387,12 @@ const BookSession = () => {
                           )}
 
                           <div className="space-y-1.5 pt-4 text-left">
-                            <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-destructive">*</span></Label>
+                            <Label htmlFor="txnId" className="font-semibold text-sm">{t.txnLabel} <span className="text-destructive">*</span></Label>
                             <Input
                               id="txnId"
                               value={formData.transactionId}
                               onChange={e => setFormData(p => ({ ...p, transactionId: e.target.value }))}
-                              placeholder="e.g., 9F8G7H6A5B"
+                              placeholder={t.txnPh}
                               className="font-mono h-11 uppercase bg-background"
                             />
                           </div>
@@ -353,8 +406,8 @@ const BookSession = () => {
                     <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success-soft p-4">
                       <Tag className="h-5 w-5 text-success flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-success-foreground text-sm">This is a Free Session</p>
-                        <p className="text-xs text-success/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
+                        <p className="font-semibold text-success-foreground text-sm">{t.freeTitle}</p>
+                        <p className="text-xs text-success/80 mt-0.5">{t.freeBody}</p>
                       </div>
                     </div>
                   )}
@@ -362,8 +415,8 @@ const BookSession = () => {
                   <div className="pt-2 space-y-3">
                     {timeLeft === 'Expired' && !isFree && (
                       <div className="bg-destructive/10 rounded-lg p-4 text-center">
-                        <p className="text-destructive font-semibold">Payment window expired.</p>
-                        <Button className="mt-2" variant="outline" onClick={() => window.location.reload()}>Reload Page to Try Again</Button>
+                        <p className="text-destructive font-semibold">{t.winExpired}</p>
+                        <Button className="mt-2" variant="outline" onClick={() => window.location.reload()}>{t.reload}</Button>
                       </div>
                     )}
 
@@ -377,18 +430,18 @@ const BookSession = () => {
                         (!isFree && (!formData.paymentMethod || !formData.transactionId.trim()))
                       }
                     >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />{isFree ? "Confirm Free Booking" : "Confirm Booking"}
+                      <CheckCircle2 className="mr-2 h-4 w-4" />{isFree ? t.confirmFree : t.confirm}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </ScrollReveal>
+          </motion.div>
         )}
 
         {/* Step 4: Confirmed */}
         {step === 'confirmed' && (
-          <ScrollReveal direction="up">
+          <motion.div key="confirmed" {...fade}>
             <Card className="max-w-lg mx-auto text-center">
               <CardContent className="p-10 space-y-6">
                 <div className={cn(
@@ -398,34 +451,35 @@ const BookSession = () => {
                   <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-success" : "text-primary")} />
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">
-                  {isFree ? 'Session Confirmed!' : 'Booking Submitted!'}
+                  {isFree ? t.sessionConfirmed : t.submitted}
                 </h2>
                 <p className="text-muted-foreground">
                   {isFree
-                    ? <>Your free session has been booked and confirmed. We'll send a reminder to <strong>{formData.email}</strong>.</>
-                    : <>Your session booking has been submitted. We'll verify your payment and send a confirmation to <strong>{formData.email}</strong>.</>
+                    ? <>{t.freeDone1}<strong>{formData.email}</strong>.</>
+                    : <>{t.paidDone1}<strong>{formData.email}</strong>.</>
                   }
                 </p>
                 <div className="bg-muted rounded-lg p-4 text-sm text-left space-y-2">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Booking ID</span><span className="font-mono text-foreground">{bookingId.slice(0, 8)}...</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t.bookingId}</span><span className="font-mono text-foreground">{bookingId.slice(0, 8)}...</span></div>
                   {!isFree && formData.transactionId && (
-                    <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{formData.transactionId}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">{t.txnId}</span><span className="font-mono text-foreground">{formData.transactionId}</span></div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status</span>
+                    <span className="text-muted-foreground">{t.status}</span>
                     {isFree
-                      ? <Badge className="bg-success-strong text-success-strong-foreground">Confirmed</Badge>
-                      : <Badge className="bg-primary/10 text-primary">Pending Verification</Badge>
+                      ? <Badge className="bg-success-strong text-success-strong-foreground">{t.confirmedBadge}</Badge>
+                      : <Badge className="bg-primary/10 text-primary">{t.pendingBadge}</Badge>
                     }
                   </div>
                 </div>
                 <Button variant="outline" onClick={() => window.location.href = '/'}>
-                  Back to Home
+                  {t.home}
                 </Button>
               </CardContent>
             </Card>
-          </ScrollReveal>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );

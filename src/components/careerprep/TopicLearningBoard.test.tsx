@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TopicLearningBoard from './TopicLearningBoard';
 import type { Topic, TopicSection } from '@/hooks/useTopics';
+import { setLang } from '@/i18n/lang';
+
+beforeAll(() => setLang('en'));
 
 const topic: Topic = {
   id: 'topic-1',

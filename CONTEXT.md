@@ -1,6 +1,6 @@
-# Portfolio Website
+# DataEntropy Learning Platform
 
-Personal portfolio and course platform: public-facing marketing, course, and booking pages, plus an admin panel for managing site content (projects, testimonials, courses, bookings, career-prep questions), backed by Supabase.
+A practical Data, AI, and software learning platform that helps early-career adults choose a role, follow an expert-authored plan, practise realistic work, and produce credible evidence of mastery. Portfolio, publishing, courses, webinars, and mentoring support that learning and career outcome rather than competing with it.
 
 ## Language
 
@@ -79,6 +79,38 @@ _Avoid_: apply promo (ambiguous — names the toggle, not the rule)
 
 ### CareerPrep
 
+**My Learning**:
+The learner's single home for their next action, due Reviews, weekly Learning Plan, active Journey, active Course, skill evidence, and credentials. It is a prioritized private continuation surface, not primary public navigation and not a catalogue of every available feature.
+_Avoid_: dashboard, Career Prep dashboard, learner portal
+
+**Learn**:
+The public learning surface that groups Career Prep, Topics, Practice, Career Guides, assessments, and solving. It is the front door to guided learning; Courses and Consultation remain separate public destinations, while My Learning remains private and route-continuous.
+_Avoid_: learning path, resource dump, public dashboard
+
+**Learning Plan**:
+A learner-facing recommendation that pairs one expert-authored Journey with a starting difficulty and weekly pace based on the learner's target role, current level, and available time. It personalizes how the learner follows the curriculum; it never generates or rearranges the Journey itself.
+_Avoid_: AI plan, custom curriculum, self-built Journey
+
+**Guided Learning Experience**:
+The default learner experience: follow the guided path through the current Topic first, then explore optional depth. A Topic gathers its explanation, analogy or visual, practice Questions, and Checkpoint together; Related Topics and the Learning Assistant add depth, while Course and Consultation offers appear only as contextual next steps. Its primary focal point is the next useful move, with route context visible and optional depth secondary. It guides toward Mastery without turning exploration into a maze. Direct Topic entry teaches immediately; role selection is offered as optional context rather than a gate.
+_Avoid_: resource dump, dashboard-first learning, generic content feed
+
+**Weekly Rhythm**:
+The learner-controlled schedule around an active Learning Plan: study days, preferred time, sessions per week, minutes per session, reminders, and pause or postponement. Changing it alters pace and the estimated finish date without changing the Journey's curriculum.
+_Avoid_: streak, timetable, custom plan
+
+**Learning Assistant**:
+Attempt-triggered support grounded in the current Topic and Question. It may diagnose an error, give the smallest useful hint, link to the relevant explanation, or prepare a similar retry; it is never a general chatbot and cannot award completion or Mastery.
+_Avoid_: AI tutor, chatbot, copilot
+
+**Viewed / Completed / Mastered**:
+Three distinct evidence states. **Viewed** means material was opened; **Completed** means its required activity or Checkpoint was finished; **Mastered** means the learner independently applied the skill and retrieved it successfully after a delay. XP never upgrades one state into another.
+_Avoid_: progress (when the specific evidence state is known), finished, learned
+
+**Learning Evidence**:
+The visual language for Viewed, Completed, and Mastered. It is distinct from generic success, warning, and error feedback, so a learner can read learning state without confusing it with system status.
+_Avoid_: progress colour, achievement badge, generic status
+
 **Question**:
 One row in `careerprep_questions`. Every type of prep content — single, MCQ, case study, mission root or child — is a Question.
 
@@ -130,7 +162,7 @@ One learner's run through a Journey — their start date, schedule, and position
 _Avoid_: journey progress, subscription, registration (a Course Enrollment is a paid thing and spelled differently)
 
 **Roadmap**:
-A standalone written reference for one career: the role description, the topic sequence, and the timeline, authored as a single markdown document and read end to end. It is **not** interactive and carries no Questions, Checkpoints or progress — Career Prep covers the same subject matter in a different medium and for a different purpose. A Roadmap is where a Journey's Topics and their order *come from* — an authoring input, not a runtime dependency — and a Stage may link out to one for the learner who wants the full map.
+A standalone written reference for one career: the role description, the topic sequence, and the timeline, authored as a single markdown document and read end to end. The public interface labels Roadmaps **Career Guides**. A Roadmap is **not** interactive and carries no Questions, Checkpoints or progress — Career Prep covers the same subject matter in a different medium and for a different purpose. A Roadmap is where a Journey's Topics and their order *come from* — an authoring input, not a runtime dependency — and a Stage may link out to one for the learner who wants the full map.
 _Avoid_: track, learning path, curriculum, course (a Course is paid and lives elsewhere)
 
 **Step**:
@@ -154,7 +186,7 @@ One phase of a Journey — a title, a duration in weeks, and an ordered list of 
 _Avoid_: phase, module, chapter, roadmap (a Roadmap is a separate reference document)
 
 **Library**:
-The browsable, filterable surface over every Question, independent of any Roadmap. Secondary to Roadmaps as a landing surface, but retained because an interview candidate with a screening next week wants to drill a category directly. A Question attached to a Step is still in the Library — one Question, one solve record, many surfaces.
+The browsable, filterable surface over every Question, independent of any Roadmap. The public navigation labels it **Practice**. Secondary to Roadmaps as a landing surface, but retained because an interview candidate with a screening next week wants to drill a category directly. A Question attached to a Step is still in the Library — one Question, one solve record, many surfaces.
 _Avoid_: question bank, catalogue, list
 
 **Question Type Colour**:

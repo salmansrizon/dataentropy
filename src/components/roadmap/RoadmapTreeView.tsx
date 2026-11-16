@@ -1,3 +1,4 @@
+import { Reveal } from '@/pages/course-details/motion';
 import { useState } from 'react';
 import { RoadmapNode } from '@/utils/parseRoadmapMarkdown';
 import { ChevronDown } from 'lucide-react';
@@ -136,7 +137,7 @@ const RoadmapTreeView = ({ nodes }: RoadmapTreeViewProps) => {
 
       <div className="relative space-y-1 sm:space-y-2">
         {sections.map((section, i) => (
-          <MainSection key={section.id} node={section} index={i} />
+          <Reveal key={section.id}><MainSection node={section} index={i} /></Reveal>
         ))}
       </div>
     </div>

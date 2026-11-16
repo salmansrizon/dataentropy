@@ -10,6 +10,9 @@ export interface SubmissionQuestion {
   question_type?: string;
   correct_option?: string | null;
   solution_sql?: string | null;
+  language?: 'sql' | 'python';
+  python_function_name?: string | null;
+  python_tests?: Array<{ args?: unknown[]; kwargs?: Record<string, unknown>; expected: unknown }>;
 }
 
 // Rows are compared as sets, not sequences: each row is stringified from its
@@ -29,6 +32,11 @@ export async function validateSubmission(
 
   if (currentQ.question_type === 'mcq') {
     return mcqAnswer === currentQ.correct_option;
+  }
+
+  if (currentQ.language === 'python') {
+    const { validatePython } = await import('./PythonExecutor');
+    return validatePython(code, currentQ.python_function_name, currentQ.python_tests);
   }
 
   if (!pg || !currentQ.solution_sql) return false;

@@ -49,10 +49,16 @@ export function recommendLearningPlan(
   journeys: JourneyCandidate[],
 ): LearningPlanRecommendation {
   const terms = ROLE_TERMS[preferences.role];
-  const journey = journeys.find((candidate) => {
-    const name = `${candidate.title} ${candidate.slug}`.toLowerCase();
-    return terms.some((term) => name.includes(term));
-  }) ?? journeys[0] ?? null;
+  const roleName = preferences.role.toLowerCase();
+  const journey = journeys
+    .map((candidate) => {
+      const name = `${candidate.title} ${candidate.slug}`.toLowerCase();
+      const exactMatch = name.includes(roleName) ? 100 : 0;
+      const termMatches = terms.filter((term) => name.includes(term)).length;
+      return { candidate, score: exactMatch + termMatches };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)[0]?.candidate ?? null;
 
   return { journey, ...PACING[preferences.time], ...LEVEL_START[preferences.level] };
 }

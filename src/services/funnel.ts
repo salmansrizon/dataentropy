@@ -118,8 +118,12 @@ export async function track({
  */
 export async function trackOnce(key: string, args: TrackArgs): Promise<void> {
   const k = `funnel_once_${key}`;
-  if (localStorage.getItem(k)) return;
-  localStorage.setItem(k, '1');
+  try {
+    if (localStorage.getItem(k)) return;
+    localStorage.setItem(k, '1');
+  } catch {
+    // Storage blocked (private mode): may double-count, but never throw from analytics.
+  }
   await track(args);
 }
 

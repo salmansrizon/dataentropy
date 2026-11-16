@@ -1,6 +1,6 @@
-import React from "react";
-import { useReducedMotion } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useInView, useReducedMotion } from "framer-motion";
+import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
 
 interface LottieAnimationProps {
   src: string;
@@ -12,6 +12,11 @@ interface LottieAnimationProps {
   speed?: number;
 }
 
+/**
+ * Plays only while on screen (and never under reduced motion), so several
+ * Lotties on one page don't all animate at once or burn CPU off-screen.
+ * Hidden (display:none) instances never intersect, so they stay paused too.
+ */
 const LottieAnimation = ({
   src,
   loop = true,
@@ -22,14 +27,24 @@ const LottieAnimation = ({
   speed = 1,
 }: LottieAnimationProps) => {
   const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { margin: "-10% 0px" });
+  const [player, setPlayer] = useState<DotLottie | null>(null);
+
+  useEffect(() => {
+    if (!player || playOnHover) return;
+    if (autoplay && inView && !reduceMotion) player.play();
+    else player.pause();
+  }, [player, inView, autoplay, reduceMotion, playOnHover]);
+
   return (
-    <div className={className} style={style}>
+    <div ref={ref} className={className} style={style}>
       <DotLottieReact
         src={src}
         loop={loop}
-        autoplay={autoplay && !reduceMotion}
+        autoplay={false}
         playOnHover={playOnHover && !reduceMotion}
-        key={String(reduceMotion)}
+        dotLottieRefCallback={setPlayer}
         speed={speed}
       />
     </div>

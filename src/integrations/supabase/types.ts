@@ -262,6 +262,7 @@ export type Database = {
           id: string
           industry: string
           initial_sql: string
+          language: string
           is_assessment_only: boolean
           is_generated: boolean
           options: Json | null
@@ -272,6 +273,8 @@ export type Database = {
           schema_sql: string
           slug: string
           solution_sql: string
+          python_function_name: string | null
+          python_tests: Json
           step_slug: string | null
           success_rate: number | null
           tags: string[] | null
@@ -289,6 +292,7 @@ export type Database = {
           id?: string
           industry: string
           initial_sql: string
+          language?: string
           is_assessment_only?: boolean
           is_generated?: boolean
           options?: Json | null
@@ -299,6 +303,8 @@ export type Database = {
           schema_sql: string
           slug: string
           solution_sql: string
+          python_function_name?: string | null
+          python_tests?: Json
           step_slug?: string | null
           success_rate?: number | null
           tags?: string[] | null
@@ -316,6 +322,7 @@ export type Database = {
           id?: string
           industry?: string
           initial_sql?: string
+          language?: string
           is_assessment_only?: boolean
           is_generated?: boolean
           options?: Json | null
@@ -326,6 +333,8 @@ export type Database = {
           schema_sql?: string
           slug?: string
           solution_sql?: string
+          python_function_name?: string | null
+          python_tests?: Json
           step_slug?: string | null
           success_rate?: number | null
           tags?: string[] | null

@@ -12,6 +12,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import FloatingContact from "@/components/FloatingContact";
 import WebinarFloatingButton from "@/components/WebinarFloatingButton";
+import SiteFooter from "@/components/SiteFooter";
 
 // Index is the landing page most first-time visitors hit, so it stays eager.
 // Every other route is a lazy adapter — its code only loads when a visitor
@@ -24,6 +25,7 @@ const BlogPostPage = lazy(() => import("./pages/BlogPostPage"));
 const PortfolioPage = lazy(() => import("./pages/PortfolioPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const CourseDetails = lazy(() => import("./pages/CourseDetails"));
+const MyLearning = lazy(() => import("./pages/MyLearning"));
 const BookSession = lazy(() => import("./pages/BookSession"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CareerPrep = lazy(() => import("./pages/CareerPrep"));
@@ -78,6 +80,7 @@ const App = () => (
                 <Route path="/portfolio" element={<PortfolioPage />} />
                 <Route path="/courses" element={<CoursesPage />} />
                 <Route path="/course/:courseId" element={<CourseDetails />} />
+                <Route path="/my-learning" element={<MyLearning />} />
                 <Route path="/book-session" element={<BookSession />} />
                 <Route path="/career-prep" element={<CareerPrep />} />
                 <Route path="/career-prep/library" element={<CareerPrepLibrary />} />
@@ -95,6 +98,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            <SiteFooter />
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

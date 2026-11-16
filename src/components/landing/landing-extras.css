@@ -1,0 +1,7 @@
+@keyframes landing-arrow-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px); } }
+@keyframes landing-rocket-float { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-12px) rotate(-2deg); } }
+.landing-arrow-nudge { animation: landing-arrow-nudge 0.9s ease-in-out infinite; }
+.landing-rocket-float { animation: landing-rocket-float 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .landing-arrow-nudge, .landing-rocket-float { animation: none; }
+}

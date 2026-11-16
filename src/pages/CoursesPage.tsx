@@ -1,435 +1,130 @@
-import { useState, useEffect } from "react";
-import { CardGridSkeleton } from '@/components/ui/skeletons';
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import LottieAnimation from "@/components/LottieAnimation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Filter, BookOpen, Clock, ChevronRight, GraduationCap, Calendar, Video } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { CourseCountdown } from "@/components/CourseCountdown";
-import ScrollReveal from "@/components/ScrollReveal";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { CardGridSkeleton } from "@/components/ui/skeletons";
+import { useLang, useT } from "@/i18n/lang";
+import { USE_SAMPLE, sampleCategories, sampleCourses, sampleWebinars } from "@/content/sampleContent";
+import CatalogHero from "@/components/catalog/CatalogHero";
+import CatalogCarousel, { type Tab } from "@/components/catalog/CatalogCarousel";
+import UpcomingWebinarBanner from "@/components/catalog/UpcomingWebinarBanner";
+import FeaturedCourses from "@/components/catalog/FeaturedCourses";
+import { isFreeCourse, isRecorded, toItems, type Category, type Course, type Webinar } from "@/components/catalog/items";
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  parent_id: string | null;
-}
+const T = {
+  en: { all: "All Courses", short: "Short Courses", recorded: "Recorded", free: "Free Courses", webinar: "Webinar" },
+  bn: { all: "সব কোর্স", short: "শর্ট কোর্স", recorded: "রেকর্ডেড", free: "ফ্রি কোর্স", webinar: "ওয়েবিনার" },
+};
 
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  banner_image: string | null;
-  technologies: string[];
-  price: number;
-  is_free: boolean;
-  duration_hours: number | null;
-  difficulty_level: string;
-  discount_percentage: number | null;
-  discounted_price: number | null;
-  category_id: string | null;
-  start_date?: string;
-  course_type?: string;
-}
-
-interface Webinar {
-  id: string;
-  title: string;
-  description: string | null;
-  webinar_date: string;
-  banner_url: string | null;
-  is_free: boolean | null;
-  price: number | null;
-  status: string | null;
-  booked_count: number | null;
-}
+const RESERVED = ["free courses", "free course", "webinar", "all", "regular", "recorded"];
 
 export default function CoursesPage() {
-  const navigate = useNavigate();
+  const t = useT(T);
+  const { pick } = useLang();
   const [courses, setCourses] = useState<Course[]>([]);
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string>("all");
+  // Navbar course search lands here as /courses?q=…
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
+  useEffect(() => {
+    if (!urlQuery) return;
+    setQuery(urlQuery);
+    document.getElementById("all-courses")?.scrollIntoView({ block: "start" });
+  }, [urlQuery]);
+  const [tab, setTab] = useState("all");
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    fetchData();
+    const id = setInterval(() => { if (!document.hidden) setTick((n) => n + 1); }, 60_000);
+    return () => clearInterval(id);
   }, []);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [catRes, courseRes, webinarRes] = await Promise.all([
-        supabase.from("course_categories" as any).select("*").order("name"),
-        supabase.from("courses").select("*").eq("status", "published").order("created_at", { ascending: false }),
-        supabase.from("webinars").select("*").in("status", ["published", "upcoming"]).order("webinar_date", { ascending: true }),
-      ]);
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      setError(false);
+      try {
+        const [catRes, courseRes, webinarRes] = await Promise.all([
+          supabase.from("course_categories" as any).select("*").order("name"),
+          supabase.from("courses").select("*").eq("status", "published").order("created_at", { ascending: false }),
+          supabase.from("webinars").select("*").in("status", ["published", "upcoming"]).order("webinar_date", { ascending: true }),
+        ]);
+        if (catRes.error) console.error("Error fetching categories:", catRes.error);
+        if (webinarRes.error) console.error("Error fetching webinars:", webinarRes.error);
+        setCategories((catRes.data as any[]) || []);
+        if (courseRes.error) throw courseRes.error;
+        setCourses((courseRes.data as any[]) || []);
+        setWebinars((webinarRes.data as Webinar[]) || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [attempt]);
 
-      setCategories((catRes.data as any[]) || []);
-      if (courseRes.error) throw courseRes.error;
-      setCourses((courseRes.data as any[]) || []);
-      setWebinars((webinarRes.data as Webinar[]) || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const useSamples = !isLoading && !error && USE_SAMPLE && !courses.length && !webinars.length;
+  const cs: Course[] = useSamples ? (sampleCourses as unknown as Course[]) : courses;
+  const ws: Webinar[] = useSamples ? (sampleWebinars as unknown as Webinar[]) : webinars;
+  const cats: Category[] = useSamples ? sampleCategories.map((c) => ({ id: c.id, name: pick(c.name) })) : categories;
 
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    let matchesTag = true;
-    if (selectedTag === "all") matchesTag = true;
-    else if (selectedTag === "free") matchesTag = course.is_free;
-    else if (selectedTag === "webinar") matchesTag = course.course_type === 'webinar';
-    else matchesTag = course.category_id === selectedTag || course.course_type?.toLowerCase() === selectedTag.toLowerCase();
-    
-    return matchesSearch && matchesTag;
-  });
+  const tabs = useMemo<Tab[]>(() => {
+    const names = new Set(cats.map((c) => c.name.toLowerCase().trim()));
+    const types = Array.from(new Set(cs.map((c) => c.course_type).filter(Boolean))) as string[];
+    return [
+      { id: "all", label: t.all },
+      ...cats.filter((c) => !c.parent_id && !RESERVED.includes(c.name.toLowerCase().trim())).map((c) => ({ id: c.id, label: c.name })),
+      ...types.filter((x) => !names.has(x.toLowerCase().trim()) && !RESERVED.includes(x.toLowerCase().trim())).map((x) => ({ id: `type:${x}`, label: x.charAt(0).toUpperCase() + x.slice(1) })),
+      { id: "short", label: t.short },
+      { id: "recorded", label: t.recorded },
+      { id: "free", label: t.free },
+      { id: "webinar", label: t.webinar },
+    ];
+  }, [cats, cs, t]);
 
-  const filteredWebinars = webinars.filter(w => {
-    const matchesSearch = w.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         (w.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    
-    let matchesTag = true;
-    if (selectedTag === "all") matchesTag = true;
-    else if (selectedTag === "free") matchesTag = w.is_free === true;
-    else if (selectedTag === "webinar") matchesTag = true;
-    else matchesTag = false; // Webinars don't have categories in this simple model
-    
-    return matchesSearch && matchesTag;
-  });
+  const items = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const okCourse = (c: Course) => {
+      if (tab === "all") return true;
+      if (tab === "short") return c.duration_hours != null && c.duration_hours <= 10;
+      if (tab === "recorded") return isRecorded(c);
+      if (tab === "free") return isFreeCourse(c);
+      if (tab === "webinar") return c.course_type === "webinar";
+      if (tab.startsWith("type:")) return c.course_type?.toLowerCase() === tab.slice(5).toLowerCase();
+      return c.category_id === tab;
+    };
+    const okWebinar = (w: Webinar) => tab === "all" || tab === "webinar" || (tab === "free" && !!w.is_free);
+    return toItems(cs.filter(okCourse), ws.filter(okWebinar)).filter((i) => `${i.title} ${i.desc} ${i.kind === "course" ? i.c.description || "" : ""}`.toLowerCase().includes(q));
+  }, [cs, ws, tab, query]);
 
-  const rootCategories = categories.filter(c => !c.parent_id);
-  const customTypes = Array.from(new Set(courses.map(c => c.course_type).filter(Boolean))) as string[];
-  const existingCategoryNames = new Set(categories.map(c => c.name.toLowerCase().trim()));
-  
-  const additionalTags = customTypes.filter(t => {
-    const normalized = t.toLowerCase().trim();
-    return !existingCategoryNames.has(normalized) && 
-           !['regular', 'free courses', 'free course', 'webinar', 'all'].includes(normalized);
-  });
+  const nextWebinar = useMemo(
+    () => ws.filter((w) => new Date(w.webinar_date).getTime() > Date.now()).sort((a, b) => +new Date(a.webinar_date) - +new Date(b.webinar_date))[0],
+    [ws],
+  );
 
-  const categoryTags = rootCategories.filter(cat => {
-    const normalized = cat.name.toLowerCase().trim();
-    return !['free courses', 'free course', 'webinar'].includes(normalized);
-  });
+  const byPopular = useMemo(() => [...cs].sort((a, b) => (b.student_count || 0) - (a.student_count || 0)), [cs]);
+  const popular = byPopular[0];
+  const second = popular && (byPopular.find((c) => c.id !== popular.id && isRecorded(c)) || byPopular[1]);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
-      {/* Hero Section */}
-      <div className="relative pt-32 pb-20 overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div className="max-w-3xl">
-              <div className="mb-4 text-sm font-bold text-primary">
-                Choose an outcome, then see the full path
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 tracking-tight">
-                <span className="text-primary">Build a practical skill</span>
-                <br />
-                <span className="text-foreground">with Professional Courses</span>
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Compare the outcome, level, time commitment, and full lesson plan before you decide. Start free courses immediately.
-              </p>
-
-              <div className="max-w-xl">
-                <label htmlFor="course-search" className="mb-2 block text-sm font-semibold">Search the course library</label>
-                <div className="group relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden="true" />
-                  <Input
-                    id="course-search"
-                    className="h-14 w-full rounded-full border-border bg-secondary pl-12 text-lg text-foreground placeholder:text-muted-foreground focus:bg-background"
-                    placeholder="Try SQL, analytics, or Python"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="hidden lg:flex justify-center">
-              <LottieAnimation src="/animations/data-insights.json" className="w-full max-w-md aspect-square" />
-            </div>
-          </div>
+      <CatalogHero courses={cs.length} webinars={ws.length} loading={isLoading} query={query} onQuery={setQuery} />
+      {isLoading ? (
+        <div id="all-courses" className="container mx-auto px-4 py-16">
+          <CardGridSkeleton count={3} className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" />
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-12">
-        <div className="space-y-8">
-          
-          <div className="flex-1">
-            <div className="mb-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {selectedTag === 'all' ? 'All Courses' : 
-                   selectedTag === 'free' ? 'Free Courses' :
-                   selectedTag === 'webinar' ? 'Latest Webinars' :
-                   categories.find(c => c.id === selectedTag)?.name || 'Filtered Results'}
-                  <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {filteredCourses.length + filteredWebinars.length}
-                  </span>
-                </h2>
-              </div>
-
-              {/* Category Filter */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1">
-                <button
-                  onClick={() => setSelectedTag("all")}
-                  className={cn(
-                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    selectedTag === "all"
-                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                  )}
-                >
-                  All Courses
-                </button>
-                {categoryTags.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedTag(cat.id)}
-                    className={cn(
-                      "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                      selectedTag === cat.id 
-                        ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                        : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                    )}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-                {additionalTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(tag)}
-                    className={cn(
-                      "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                      selectedTag === tag 
-                        ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                        : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                    )}
-                  >
-                    {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setSelectedTag("free")}
-                  className={cn(
-                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    selectedTag === "free"
-                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                  )}
-                >
-                  Free Courses
-                </button>
-                <button
-                  onClick={() => setSelectedTag("webinar")}
-                  className={cn(
-                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    selectedTag === "webinar"
-                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                  )}
-                >
-                  Webinar
-                </button>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <CardGridSkeleton count={6} className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" />
-            ) : (filteredWebinars.length > 0 || filteredCourses.length > 0) ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {/* Webinar cards first */}
-                {filteredWebinars.map((webinar, index) => (
-                  <ScrollReveal key={`w-${webinar.id}`} direction="up" delay={index * 0.05}>
-                    <article className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group">
-                      <div className="relative bg-series-webinar text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
-
-                        {webinar.banner_url && (
-                          <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                        )}
-                        
-                        <div className="z-10 flex items-center gap-2 mb-3">
-                          <Video className="w-5 h-5" />
-                          <span className="text-xs font-bold uppercase tracking-wider opacity-80">Webinar</span>
-                        </div>
-                        
-                        <h3 className="z-10 px-2 text-base font-bold leading-tight sm:text-lg lg:text-xl [overflow-wrap:anywhere]">
-                          {webinar.title}
-                        </h3>
-                        
-                        <div className="mt-3 z-10 flex items-center gap-2 text-xs opacity-90">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {format(new Date(webinar.webinar_date), "MMM dd, yyyy • hh:mm a")}
-                        </div>
-                      </div>
-
-                      <div className="p-6 flex flex-col flex-grow gap-4">
-                        {new Date(webinar.webinar_date) > new Date() && (
-                          <div className="bg-warning-soft text-warning text-[11px] font-bold px-3 py-1.5 rounded-full w-fit">
-                            <CourseCountdown startDate={webinar.webinar_date} showIcon={false} />
-                          </div>
-                        )}
-                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
-                          {webinar.description || "Join this exciting webinar to learn from industry experts."}
-                        </p>
-
-                        <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <BookOpen className="w-4 h-4" />
-                            <span className="text-xs font-medium">{webinar.booked_count || 0} registered</span>
-                          </div>
-                          <div className="font-bold text-foreground">
-                            {webinar.is_free ? (
-                              <span className="text-success font-black tracking-tight">FREE</span>
-                            ) : (
-                              <span>৳ {webinar.price}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <Badge className={cn(
-                          "w-fit text-[10px] font-bold uppercase tracking-wider",
-                          webinar.status === 'published'
-                            ? "bg-success-soft text-success-strong"
-                            : "bg-warning-soft text-warning"
-                        )}>
-                          {webinar.status === 'published' ? 'Live' : 'Upcoming'}
-                        </Badge>
-
-                        <Button
-                          className="w-full mt-1 h-12 active:scale-[0.98]"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/webinar/${webinar.id}`); }}
-                        >
-                          Register Now
-                        </Button>
-                      </div>
-                    </article>
-                  </ScrollReveal>
-                ))}
-
-                {/* Course cards after */}
-                {filteredCourses.map((course, index) => (
-                  <ScrollReveal key={course.id} direction="up" delay={(filteredWebinars.length + index) * 0.05}>
-                    <article className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group">
-                      <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
-                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
-
-                        <h3 className="z-10 line-clamp-3 px-2 text-base font-bold uppercase leading-tight tracking-wide sm:text-lg lg:text-xl [overflow-wrap:anywhere]">
-                          {course.title}
-                        </h3>
-
-                        <div className="mt-4 z-10 rounded-full border border-primary-foreground/20 bg-scrim/20 px-4 py-1.5 text-sm font-bold text-primary-foreground shadow-sm">
-                          View the learning plan
-                        </div>
-                      </div>
-
-                      <div className="p-6 flex flex-col flex-grow gap-5">
-                        <div className="flex justify-between items-start gap-4">
-                          <h4 className="font-bold text-lg text-foreground leading-snug flex items-center gap-2">
-                             {course.title}
-                             {course.is_free && (
-                               <span className="flex h-6 shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 text-xs font-bold text-success-strong">
-                                 FREE
-                               </span>
-                             )}
-                          </h4>
-                          <div className="flex flex-col gap-1 items-end shrink-0">
-                            {course.start_date && (
-                              <div className="bg-warning-soft text-warning text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                <CourseCountdown startDate={course.start_date} showIcon={false} />
-                              </div>
-                            )}
-                            <div className="bg-success-soft text-success-strong text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-success/20">
-                              {course.difficulty_level || "beginner"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
-                          {course.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-1.5 mt-auto">
-                          {course.technologies?.slice(0, 3).map(tech => (
-                            <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-muted text-muted-foreground border border-border/50">
-                              {tech}
-                            </Badge>
-                          ))}
-                          {course.technologies?.length > 3 && (
-                            <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-muted text-muted-foreground border border-border/50">
-                              +{course.technologies.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-xs font-medium">{course.duration_hours ? `${course.duration_hours}h` : 'Self-paced'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 font-bold text-foreground">
-                            {(course.is_free || (!course.price && !course.discounted_price)) ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success text-success-foreground text-xs font-bold tracking-wide shadow-sm">
-                                FREE
-                              </span>
-                            ) : course.discounted_price ? (
-                              <>
-                                <span>৳ {course.discounted_price}</span>
-                                <span className="text-xs text-muted-foreground line-through font-normal">৳ {course.price}</span>
-                              </>
-                            ) : (
-                              <span>৳ {course.price}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
-                          onClick={() => navigate(`/course/${course.id}`)}
-                        >
-                          View Course Details
-                        </Button>
-                      </div>
-                    </article>
-                  </ScrollReveal>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-24 bg-card rounded-3xl border-2 border-dashed border-muted">
-                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">No courses found</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Try adjusting your search or category filters to find what you're looking for.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-8 rounded-xl"
-                  onClick={() => {setSearchQuery(""); setSelectedTag("all")}}
-                >
-                  Clear all filters
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      ) : (
+        <CatalogCarousel tabs={tabs} active={tab} onTab={setTab} items={items} onClear={() => { setQuery(""); setTab("all"); }} error={error} onRetry={() => setAttempt((n) => n + 1)} />
+      )}
+      {nextWebinar && <UpcomingWebinarBanner webinar={nextWebinar} />}
+      {popular && <FeaturedCourses left={popular} right={second} />}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { levelFor, streakFrom } from '@/lib/levels';
 const questionRepository = createRepository(careerPrepQuestionConfig);
 
 export type QuestionType = 'root' | 'code' | 'mcq' | 'case_study';
+export type CodingLanguage = 'sql' | 'python';
 
 export interface MCQOption {
   label: string; // "A" | "B" | "C" | "D"
@@ -27,6 +28,9 @@ export interface CareerPrepQuestion {
   schema_sql: string;
   initial_sql: string;
   solution_sql: string;
+  language?: CodingLanguage;
+  python_function_name?: string | null;
+  python_tests?: Array<{ args?: unknown[]; kwargs?: Record<string, unknown>; expected: unknown }>;
   success_rate: number;
   hints?: string[];
   // New hierarchical / categorisation fields

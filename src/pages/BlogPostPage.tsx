@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion';
+import { useLang, useT } from '@/i18n/lang';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +12,17 @@ import { usePageView } from "@/hooks/usePageView";
 import { BlogContentRenderer } from "@/components/BlogContentRenderer";
 import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
 
+const T = {
+  en: { back: 'Back to Blog', loading: 'Loading post' },
+  bn: { back: 'ব্লগে ফিরে যান', loading: 'পোস্ট লোড হচ্ছে' },
+};
+
 const BlogPostPage = () => {
+  const t = useT(T);
+  const { date } = useLang();
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
   const { slug } = useParams();
   usePageView(`/blog/${slug}`);
   const navigate = useNavigate();
@@ -46,7 +58,7 @@ const BlogPostPage = () => {
         <Navbar />
         <div className="min-h-screen pt-16 bg-background">
           <div className="flex justify-center items-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-label={t.loading} />
           </div>
         </div>
       </>
@@ -60,6 +72,7 @@ const BlogPostPage = () => {
   return (
     <>
       <Navbar />
+      {!reduce && <motion.div aria-hidden="true" className="fixed inset-x-0 top-0 z-[60] h-1 origin-left bg-primary" style={{ scaleX: progress }} />}
       <article className="min-h-screen pt-16 bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Button
@@ -68,7 +81,7 @@ const BlogPostPage = () => {
             onClick={() => navigate('/blog')}
           >
             <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
-            Back to Blog
+            {t.back}
           </Button>
 
           {blog.featured_image ? (
@@ -95,16 +108,18 @@ const BlogPostPage = () => {
           )}
 
           <div className="prose prose-lg dark:prose-invert max-w-none">
-            <h1 className="page-heading text-3xl sm:text-4xl font-bold text-foreground">{blog.title}</h1>
-            <div className="flex items-center text-muted-foreground mb-8">
-              <time dateTime={blog.created_at}>
-                {new Date(blog.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </time>
-            </div>
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.24, 1, 0.4, 1] }}
+            >
+              <h1 className="page-heading text-3xl sm:text-4xl font-bold text-foreground">{blog.title}</h1>
+              <div className="flex items-center text-muted-foreground mb-8">
+                <time dateTime={blog.created_at}>
+                  {date(blog.created_at, { year: 'numeric', month: 'long', day: 'numeric' })}
+                </time>
+              </div>
+            </motion.div>
 
             <BlogContentRenderer content={blog.content} />
           </div>

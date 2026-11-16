@@ -8,6 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Map, ArrowRight } from 'lucide-react';
 import { usePageView } from '@/hooks/usePageView';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useT } from '@/i18n/lang';
+import { RevealGroup, RevealItem } from '@/pages/course-details/motion';
+
+const T = {
+  en: { eyebrow: 'Choose your direction', title: 'Career Roadmaps', desc: 'See what to learn, how each skill connects, and the next practical step toward your role.', empty: 'No roadmaps available yet. Check back soon!', explore: 'Explore Roadmap' },
+  bn: { eyebrow: 'আপনার পথ বেছে নিন', title: 'ক্যারিয়ার রোডম্যাপ', desc: 'কী শিখবেন, স্কিলগুলো কীভাবে একটার সাথে আরেকটা যুক্ত, আর কাঙ্ক্ষিত রোলের জন্য পরের ব্যবহারিক ধাপ কী, সব এক জায়গায়।', empty: 'এখনো কোনো রোডম্যাপ নেই। শীঘ্রই আবার দেখুন!', explore: 'রোডম্যাপ দেখুন' },
+};
 
 interface Roadmap {
   id: string;
@@ -20,6 +27,7 @@ interface Roadmap {
 }
 
 const RoadmapsPage = () => {
+  const t = useT(T);
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
   usePageView('/roadmaps');
@@ -42,7 +50,7 @@ const RoadmapsPage = () => {
       <Navbar />
       <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <PageIntro eyebrow="Choose your direction" title="Career Roadmaps" description="See what to learn, how each skill connects, and the next practical step toward your role." animation="/animations/roadmap-journey.json" />
+          <PageIntro eyebrow={t.eyebrow} title={t.title} description={t.desc} animation="/animations/roadmap-journey.json" />
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -51,12 +59,13 @@ const RoadmapsPage = () => {
               ))}
             </div>
           ) : roadmaps.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16">No roadmaps available yet. Check back soon!</p>
+            <p className="text-center text-muted-foreground py-16">{t.empty}</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {roadmaps.map((r) => (
-                <Link key={r.id} to={`/roadmaps/${r.slug}`}>
-                  <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full border-primary/10 hover:border-primary/30">
+                <RevealItem key={r.id} className="h-full">
+                <Link to={`/roadmaps/${r.slug}`} className="block h-full">
+                  <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 motion-reduce:transform-none h-full border-primary/10 hover:border-primary/30">
                     {r.banner_image && (
                       <div className="h-28 sm:h-32 overflow-hidden rounded-t-xl">
                         <img src={r.banner_image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -79,13 +88,14 @@ const RoadmapsPage = () => {
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{r.description}</p>
                       )}
                       <div className="flex items-center text-sm text-primary font-medium">
-                        Explore Roadmap <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        {t.explore} <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </CardContent>
                   </Card>
                 </Link>
+                </RevealItem>
               ))}
-            </div>
+            </RevealGroup>
           )}
         </div>
       </div>

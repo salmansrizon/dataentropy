@@ -1,7 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TopicCard from './TopicCard';
+import { setLang } from '@/i18n/lang';
+
+beforeAll(() => setLang('en'));
 
 const trackMock = vi.hoisted(() => vi.fn());
 vi.mock('@/services/funnel', () => ({ track: trackMock }));

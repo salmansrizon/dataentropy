@@ -8,6 +8,14 @@ import { cleanup } from '@testing-library/react';
 // toBeInTheDocument() a type error, since nothing widened Assertion.
 import '@testing-library/jest-dom/vitest';
 
+class IntersectionObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return []; }
+}
+vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
+
 // Clean up after each test
 afterEach(() => {
   cleanup();

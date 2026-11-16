@@ -1,0 +1,29 @@
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.landing-float { animation: landing-float 6s ease-in-out infinite; }
+.landing-float-b { animation: landing-float 7.5s ease-in-out -2s infinite; }
+.landing-float-c { animation: landing-float 5s ease-in-out -1s infinite; }
+.landing-float-d { animation: landing-float 8.5s ease-in-out -4s infinite; }
+.landing-donut {
+  background: conic-gradient(hsl(var(--brand-purple)) 0 62%, hsl(var(--brand-blue)) 62% 85%, hsl(var(--brand-border)) 85% 100%);
+  -webkit-mask: radial-gradient(circle, transparent 55%, #000 56%);
+  mask: radial-gradient(circle, transparent 55%, #000 56%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-float, .landing-float-b, .landing-float-c, .landing-float-d { animation: none; }
+}
+
+/* Hero photo melts into the background. Asymmetric: the person stands right of centre,
+   so fade the office scene on the left widely and keep the right edge / body nearly opaque. */
+.hero-photo-fade {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, black 28%, black 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 8%, black 90%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, black 28%, black 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 8%, black 90%, transparent 100%);
+  mask-composite: intersect;
+}

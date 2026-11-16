@@ -1,0 +1,8 @@
+@keyframes landing-bulb-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px hsl(var(--brand-purple) / 0.4)); }
+  50% { filter: drop-shadow(0 0 10px hsl(var(--brand-purple) / 0.9)); }
+}
+.landing-bulb { animation: landing-bulb-glow 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .landing-bulb { animation: none; }
+}

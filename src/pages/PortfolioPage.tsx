@@ -8,6 +8,23 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { usePageView } from "@/hooks/usePageView";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/i18n/lang";
+import { Reveal, RevealGroup, RevealItem } from "@/pages/course-details/motion";
+
+const T = {
+  en: {
+    eyebrow: "From idea to implementation", title: "Practical work. Visible outcomes.",
+    desc: "Explore projects in analytics, engineering, and software. See the tools, decisions, and implementations behind the work.",
+    h1: "Portfolio", sub: "A showcase of my projects and technical implementations",
+    less: "Show less", more: "Read more", demo: "Live Demo", src: "Source Code", empty: "No projects available yet.",
+  },
+  bn: {
+    eyebrow: "আইডিয়া থেকে বাস্তবায়ন", title: "ব্যবহারিক কাজ। চোখে পড়ার মতো ফলাফল।",
+    desc: "অ্যানালিটিক্স, ইঞ্জিনিয়ারিং ও সফটওয়্যারের প্রজেক্ট দেখুন। কাজের পেছনের টুল, সিদ্ধান্ত ও বাস্তবায়ন জানুন।",
+    h1: "পোর্টফোলিও", sub: "আমার প্রজেক্ট ও টেকনিক্যাল বাস্তবায়নের সংগ্রহ",
+    less: "কম দেখুন", more: "আরও পড়ুন", demo: "লাইভ ডেমো", src: "সোর্স কোড", empty: "এখনো কোনো প্রজেক্ট নেই।",
+  },
+};
 
 interface Project {
   id: string;
@@ -23,6 +40,7 @@ interface Project {
 const DESC_LIMIT = 120;
 
 const PortfolioPage = () => {
+  const t = useT(T);
   usePageView("/portfolio");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +80,7 @@ const PortfolioPage = () => {
         <Navbar />
         <div className="min-h-screen pt-32 bg-background">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <PageIntro eyebrow="From idea to implementation" title="Practical work. Visible outcomes." description="Explore projects in analytics, engineering, and software. See the tools, decisions, and implementations behind the work." />
+            <PageIntro eyebrow={t.eyebrow} title={t.title} description={t.desc} />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Card key={i} className="overflow-hidden border border-border/50">
@@ -97,20 +115,21 @@ const PortfolioPage = () => {
       <Navbar />
       <section className="min-h-screen pt-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-foreground mb-4 text-primary">Portfolio</h1>
+          <Reveal className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-foreground mb-4 text-primary">{t.h1}</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              A showcase of my projects and technical implementations
+              {t.sub}
             </p>
-          </div>
+          </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => {
               const isExpanded = expandedIds.has(project.id);
               const isLong = project.description.length > DESC_LIMIT;
 
               return (
-                <Card key={project.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+                <RevealItem key={project.id} className="h-full">
+                <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition duration-300 motion-reduce:transform-none flex flex-col h-full">
                   {project.image_url && (
                     <div className="aspect-video overflow-hidden">
                       <img
@@ -144,7 +163,7 @@ const PortfolioPage = () => {
                           onClick={() => toggleExpand(project.id)}
                           className="text-primary text-sm font-medium flex items-center gap-1 mb-4 hover:underline"
                         >
-                          {isExpanded ? 'Show less' : 'Read more'}
+                          {isExpanded ? t.less : t.more}
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>
                       )}
@@ -155,7 +174,7 @@ const PortfolioPage = () => {
                         <Button variant="outline" className="flex-1" asChild>
                           <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Live Demo
+                            {t.demo}
                           </a>
                         </Button>
                       )}
@@ -163,20 +182,21 @@ const PortfolioPage = () => {
                         <Button variant="outline" className="flex-1" asChild>
                           <a href={project.github_url} target="_blank" rel="noopener noreferrer">
                             <Github className="h-4 w-4 mr-2" />
-                            Source Code
+                            {t.src}
                           </a>
                         </Button>
                       )}
                     </div>
                   </CardContent>
                 </Card>
+                </RevealItem>
               );
             })}
-          </div>
+          </RevealGroup>
 
           {projects.length === 0 && (
             <div className="text-center text-muted-foreground py-12">
-              <p>No projects available yet.</p>
+              <p>{t.empty}</p>
             </div>
           )}
         </div>

@@ -1,0 +1,15 @@
+/* Decorative only. Staggered, never in sync; off under reduced motion. */
+@keyframes catalog-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes catalog-grow {
+  from { transform: scaleY(0.05); }
+  to { transform: scaleY(1); }
+}
+.catalog-float { animation: catalog-float 5s ease-in-out infinite; }
+.catalog-bar { transform-origin: bottom; animation: catalog-grow 0.9s cubic-bezier(0.24, 1, 0.4, 1) both; }
+.catalog-blob { background: radial-gradient(circle, hsl(var(--primary) / 0.22), transparent 70%); }
+@media (prefers-reduced-motion: reduce) {
+  .catalog-float, .catalog-bar { animation: none; }
+}

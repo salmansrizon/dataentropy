@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useBookingData } from "@/hooks/useBookingData";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/lang";
 import {
   CreditCard,
   CheckCircle2,
@@ -33,7 +34,11 @@ export interface PaymentModalData {
   transactionId: string;
   /** Any extra field values keyed by PaymentModalField.key */
   extras: Record<string, string>;
+  /** Uppercased, trimmed promo code; only set when collectPromoCode is on and non-empty. */
+  promoCode?: string;
 }
+
+const T = { en: { promo: "Promo code (optional)" }, bn: { promo: "প্রোমো কোড (ঐচ্ছিক)" } };
 
 export interface PaymentModalProps {
   open: boolean;
@@ -55,6 +60,10 @@ export interface PaymentModalProps {
   submitLabel?: string;
   /** Label shown for free items. Defaults to "Confirm Free Booking" */
   freeSubmitLabel?: string;
+  /** Changes generic booking copy for course enrollment flows. */
+  confirmationType?: "booking" | "enrollment";
+  /** Show an optional promo code input. Default false. */
+  collectPromoCode?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -69,7 +78,10 @@ const PaymentModal = ({
   onSubmit,
   submitLabel = "Confirm Booking",
   freeSubmitLabel = "Confirm Free Booking",
+  confirmationType = "booking",
+  collectPromoCode = false,
 }: PaymentModalProps) => {
+  const t = useT(T);
   const { toast } = useToast();
   const { paymentSettings } = useBookingData();
 
@@ -80,6 +92,7 @@ const PaymentModal = ({
   const [extras, setExtras] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad" | "">("");
   const [transactionId, setTransactionId] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -94,6 +107,7 @@ const PaymentModal = ({
         setExtras({});
         setPaymentMethod("");
         setTransactionId("");
+        setPromoCode("");
         setSubmitting(false);
         setSuccess(false);
       }, 300);
@@ -142,6 +156,7 @@ const PaymentModal = ({
         paymentMethod,
         transactionId,
         extras,
+        ...(collectPromoCode && promoCode.trim() ? { promoCode: promoCode.trim().toUpperCase() } : {}),
       });
       setSuccess(true);
     } catch (err: any) {
@@ -176,12 +191,18 @@ const PaymentModal = ({
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {isFree ? "Confirmed!" : "Booking Submitted!"}
+                {isFree
+                  ? confirmationType === "enrollment" ? "Enrollment confirmed!" : "Confirmed!"
+                  : confirmationType === "enrollment" ? "Enrollment submitted" : "Booking Submitted!"}
               </h2>
               <p className="text-muted-foreground">
                 {isFree
-                  ? <>Your spot has been confirmed. We'll send a reminder to <strong>{email}</strong>.</>
-                  : <>Your booking has been submitted. We'll verify your payment and send a confirmation to <strong>{email}</strong>.</>
+                  ? confirmationType === "enrollment"
+                    ? <>Course access is ready. We'll send details to <strong>{email}</strong>.</>
+                    : <>Your spot has been confirmed. We'll send a reminder to <strong>{email}</strong>.</>
+                  : confirmationType === "enrollment"
+                    ? <>Payment is pending verification. We'll email access details to <strong>{email}</strong>.</>
+                    : <>Your booking has been submitted. We'll verify your payment and send a confirmation to <strong>{email}</strong>.</>
                 }
               </p>
             </div>
@@ -275,6 +296,19 @@ const PaymentModal = ({
                   />
                 </div>
               ))}
+
+              {collectPromoCode && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="payment-promo" className="text-sm font-semibold">{t.promo}</Label>
+                  <Input
+                    id="payment-promo"
+                    maxLength={40}
+                    className="font-mono uppercase"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  />
+                </div>
+              )}
 
               {/* ── Payment Section (paid only) ─────────────── */}
               {!isFree && (

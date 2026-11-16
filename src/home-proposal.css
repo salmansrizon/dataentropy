@@ -57,3 +57,13 @@
   .home-flow li { min-height: 140px; padding-left: 100px; }
   .home-flow li > svg:first-of-type { position: absolute; left: 24px; top: 35px; }
 }
+
+/* FlowSteps: active step highlight + arrow nudge (motion only when allowed) */
+.home-flow li.home-flow-step { transition: border-color .3s, box-shadow .3s, transform .3s; }
+.home-flow li.home-flow-step > svg:first-of-type { transition: background-color .3s, color .3s, transform .3s; }
+.home-flow li.home-flow-step[data-active] { border-color: hsl(var(--primary) / .45); box-shadow: var(--shadow-brand); transform: translateY(-4px); }
+.home-flow li.home-flow-step[data-active] > svg:first-of-type { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); transform: scale(1.08); }
+@media (prefers-reduced-motion: no-preference) {
+  .home-flow li.home-flow-step[data-active] > .home-flow-arrow { animation: home-flow-nudge .9s ease-in-out infinite; color: hsl(var(--primary)); }
+}
+@keyframes home-flow-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px); } }

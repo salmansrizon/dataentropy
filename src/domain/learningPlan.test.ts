@@ -13,8 +13,16 @@ describe('recommendLearningPlan', () => {
     });
   });
 
-  it('falls back to the first published Journey', () => {
-    expect(recommendLearningPlan({ role: 'AI engineer', level: 'Starting out', time: '2 hours' }, journeys).journey).toBe(journeys[0]);
+  it('chooses exact role match over an earlier generic match', () => {
+    const candidates = [
+      { id: 'fde', slug: 'forward-deployed-engineer', title: 'Forward Deployed Engineer' },
+      ...journeys,
+    ];
+    expect(recommendLearningPlan({ role: 'Data engineer', level: 'Starting out', time: '2 hours' }, candidates).journey?.id).toBe('2');
+  });
+
+  it('does not redirect an unmatched role to another Journey', () => {
+    expect(recommendLearningPlan({ role: 'AI engineer', level: 'Starting out', time: '2 hours' }, journeys).journey).toBeNull();
   });
 
   it('serializes the three preferences without losing spaces', () => {

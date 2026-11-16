@@ -10,8 +10,34 @@ import { useToast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { postSignInTarget } from '@/lib/authRouting';
 import { Lock, Mail } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useT } from '@/i18n/lang';
+
+const T = {
+  en: {
+    error: 'Error', success: 'Success', signedIn: 'Signed in successfully!', checkEmail: 'Check your email for verification link!',
+    story: 'Your next chapter starts with practice.',
+    storyBody: 'Sign in to keep your learning progress, return to your projects, and continue building practical data skills.',
+    welcome: 'Welcome to DataEntropy', sub: 'Sign in or create your account to continue',
+    signIn: 'Sign In', signUp: 'Sign Up', email: 'Email', password: 'Password',
+    emailPh: 'Enter your email', passwordPh: 'Enter your password',
+    signingIn: 'Signing in...', creating: 'Creating account...',
+  },
+  bn: {
+    error: 'সমস্যা হয়েছে', success: 'সফল', signedIn: 'সাইন ইন হয়েছে!', checkEmail: 'ভেরিফিকেশন লিংকের জন্য আপনার email দেখুন!',
+    story: 'প্র্যাকটিসের মধ্য দিয়েই শুরু হোক আপনার পরের অধ্যায়।',
+    storyBody: 'সাইন ইন করে আপনার শেখার অগ্রগতি ধরে রাখুন, প্রজেক্টে ফিরে যান এবং ব্যবহারিক ডেটা স্কিল গড়ে তুলুন।',
+    welcome: 'DataEntropy-তে স্বাগতম', sub: 'চালিয়ে যেতে সাইন ইন করুন বা অ্যাকাউন্ট খুলুন',
+    signIn: 'সাইন ইন', signUp: 'সাইন আপ', email: 'Email', password: 'পাসওয়ার্ড',
+    emailPh: 'আপনার email লিখুন', passwordPh: 'আপনার পাসওয়ার্ড লিখুন',
+    signingIn: 'সাইন ইন হচ্ছে...', creating: 'অ্যাকাউন্ট খোলা হচ্ছে...',
+  },
+};
 
 const Auth = () => {
+  const t = useT(T);
+  const reduce = useReducedMotion();
+  const rise = (delay: number) => reduce ? {} : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay } };
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,14 +61,14 @@ const Auth = () => {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Success",
-        description: "Signed in successfully!",
+        title: t.success,
+        description: t.signedIn,
       });
     }
     
@@ -57,14 +83,14 @@ const Auth = () => {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t.error,
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Success",
-        description: "Check your email for verification link!",
+        title: t.success,
+        description: t.checkEmail,
       });
     }
     
@@ -73,37 +99,38 @@ const Auth = () => {
 
   return (
     <div className="auth-layout">
-      <div className="auth-story">
+      <motion.div className="auth-story" {...rise(0)}>
         <Link to="/">DataEntropy</Link>
-        <h2>Your next chapter starts with practice.</h2>
-        <p>Sign in to keep your learning progress, return to your projects, and continue building practical data skills.</p>
+        <h2>{t.story}</h2>
+        <p>{t.storyBody}</p>
         <div aria-hidden="true">
           <LottieAnimation src="/animations/data-insights.json" loop={false} className="hidden md:block h-56 w-64" />
         </div>
-      </div>
-      <Card className="auth-panel w-full max-w-md">
+      </motion.div>
+      <motion.div className="w-full max-w-md" {...rise(0.12)}>
+      <Card className="auth-panel w-full">
         <CardHeader className="text-center">
-          <h1 className="text-2xl font-bold">Welcome to DataEntropy</h1>
-          <CardDescription>Sign in or create your account to continue</CardDescription>
+          <h1 className="text-2xl font-bold">{t.welcome}</h1>
+          <CardDescription>{t.sub}</CardDescription>
         </CardHeader>
         
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="signin">{t.signIn}</TabsTrigger>
+            <TabsTrigger value="signup">{t.signUp}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="signin">
             <form onSubmit={handleSignIn}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t.email}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t.emailPh}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -113,13 +140,13 @@ const Auth = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t.password}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Enter your password"
+                      placeholder={t.passwordPh}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
@@ -131,7 +158,7 @@ const Auth = () => {
               
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? t.signingIn : t.signIn}
                 </Button>
               </CardFooter>
             </form>
@@ -141,13 +168,13 @@ const Auth = () => {
             <form onSubmit={handleSignUp}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t.email}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t.emailPh}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -157,13 +184,13 @@ const Auth = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t.password}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-password"
                       type="password"
-                      placeholder="Enter your password"
+                      placeholder={t.passwordPh}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
@@ -175,13 +202,14 @@ const Auth = () => {
               
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Sign Up"}
+                  {loading ? t.creating : t.signUp}
                 </Button>
               </CardFooter>
             </form>
           </TabsContent>
         </Tabs>
       </Card>
+      </motion.div>
     </div>
   );
 };

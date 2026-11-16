@@ -6,6 +6,12 @@ import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { type Checkpoint, useSubmitCheckpoint } from '@/hooks/useCheckpoints';
 import TopicCard from './TopicCard';
 import type { Topic } from '@/hooks/useTopics';
+import { useT } from '@/i18n/lang';
+
+const T = {
+  en: { cp: 'Checkpoint', check: 'Check answer', done: 'Step complete', first: ' — first try', cont: 'Continue', hint: 'The correct answer is highlighted.', carry: 'You can carry on to the next Step', hint2: ' — only the certificate needs every Checkpoint passed.', anyway: 'Continue anyway', retry: 'Try again' },
+  bn: { cp: 'চেকপয়েন্ট', check: 'উত্তর যাচাই করুন', done: 'ধাপ সম্পন্ন', first: ' — প্রথমবারেই', cont: 'এগিয়ে যান', hint: 'সঠিক উত্তরটি হাইলাইট করা আছে।', carry: 'আপনি পরের ধাপে যেতে পারেন', hint2: ' — শুধু সার্টিফিকেটের জন্য সব চেকপয়েন্টে পাস করতে হবে।', anyway: 'তবুও এগিয়ে যান', retry: 'আবার চেষ্টা করুন' },
+};
 
 // The Checkpoint fires as a modal over the Step. Auto-graded, never a written
 // answer. A wrong answer is a SOFT gate: "Continue anyway" sits beside "Try
@@ -29,6 +35,7 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, on
   // Revealed by the server on submit, not held by the client beforehand.
   const [answer, setAnswer] = useState<string | null>(null);
   const submit = useSubmitCheckpoint(topicId);
+  const t = useT(T);
 
   if (!checkpoint) return null;
 
@@ -55,7 +62,7 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, on
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <div className="mb-1 flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px]">Checkpoint</Badge>
+          <Badge variant="outline" className="text-[10px]">{t.cp}</Badge>
           <span className="truncate text-xs text-muted-foreground">{topicTitle}</span>
         </div>
         <h2 className="mb-4 text-lg font-bold">{checkpoint.title}</h2>
@@ -95,7 +102,7 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, on
 
         {outcome === 'asking' && (
           <Button className="mt-4 w-full rounded-full" disabled={!picked || submit.isPending} onClick={check}>
-            Check answer
+            {t.check}
           </Button>
         )}
 
@@ -104,10 +111,10 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, on
             <div className="mb-3 flex items-center gap-2 rounded-xl bg-success-soft p-3">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
               <p className="text-sm font-semibold text-success">
-                Step complete{attempts === 1 ? ' — first try' : ''}.
+                {t.done}{attempts === 1 ? t.first : ''}.
               </p>
             </div>
-            <Button className="w-full rounded-full" onClick={onClose}>Continue</Button>
+            <Button className="w-full rounded-full" onClick={onClose}>{t.cont}</Button>
           </div>
         )}
 
@@ -124,15 +131,14 @@ const CheckpointDialog = ({ topicId, checkpoint, topicTitle, topic, onPassed, on
             <div className="flex items-start gap-2 rounded-xl bg-muted p-3">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-xs text-muted-foreground">
-                The correct answer is highlighted. <strong>You can carry on to the next Step</strong> —
-                only the certificate needs every Checkpoint passed.
+                {t.hint} <strong>{t.carry}</strong>{t.hint2}
               </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1 rounded-full" onClick={onClose}>
-                Continue anyway
+                {t.anyway}
               </Button>
-              <Button className="flex-1 rounded-full" onClick={retry}>Try again</Button>
+              <Button className="flex-1 rounded-full" onClick={retry}>{t.retry}</Button>
             </div>
           </div>
         )}

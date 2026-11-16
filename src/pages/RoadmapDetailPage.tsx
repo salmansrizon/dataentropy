@@ -15,6 +15,34 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/contexts/AuthContext';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useT } from '@/i18n/lang';
+import { Reveal } from '@/pages/course-details/motion';
+
+const T = {
+  en: {
+    badEmail: 'Please enter a valid email address.', badPhone: 'Please enter a valid WhatsApp number (e.g. +8801712345678).',
+    saveFail: 'Could not save your info:', wrong: 'Something went wrong. Please try again.',
+    notFound: 'Roadmap not found', backAll: 'Back to Roadmaps', all: 'All Roadmaps', tree: 'Tree', list: 'List',
+    empty: 'No content available for this roadmap yet.', ctaTitle: 'Need Customize Guideline?',
+    ctaBody: 'Get a personalized roadmap tailored to your goals, background, and timeline. Book a 1:1 session to plan your career journey.',
+    book: 'Book a Session', unlock: 'Unlock the Full Roadmap',
+    unlockBody: 'Enter your details to access this career roadmap. Free, no spam — just stay updated on new content.',
+    email: 'Email', whatsapp: 'WhatsApp Number', saving: 'Saving...', cont: 'Continue to Roadmap',
+    copied: 'Copied!', share: 'Share', shareText: 'Check out this roadmap:', view: 'View mode',
+  },
+  bn: {
+    badEmail: 'সঠিক ইমেইল অ্যাড্রেস দিন।', badPhone: 'সঠিক হোয়াটসঅ্যাপ নাম্বার দিন (যেমন +8801712345678)।',
+    saveFail: 'আপনার তথ্য সেভ করা যায়নি:', wrong: 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
+    notFound: 'রোডম্যাপ পাওয়া যায়নি', backAll: 'রোডম্যাপে ফিরে যান', all: 'সব রোডম্যাপ', tree: 'ট্রি', list: 'লিস্ট',
+    empty: 'এই রোডম্যাপে এখনো কোনো কনটেন্ট নেই।', ctaTitle: 'কাস্টমাইজড গাইডলাইন দরকার?',
+    ctaBody: 'আপনার লক্ষ্য, ব্যাকগ্রাউন্ড ও সময় অনুযায়ী ব্যক্তিগত রোডম্যাপ নিন। ক্যারিয়ার যাত্রা সাজাতে ১:১ সেশন বুক করুন।',
+    book: 'সেশন বুক করুন', unlock: 'পুরো রোডম্যাপ আনলক করুন',
+    unlockBody: 'এই ক্যারিয়ার রোডম্যাপ দেখতে আপনার তথ্য দিন। ফ্রি, কোনো স্প্যাম নেই — শুধু নতুন কনটেন্টের খবর পাবেন।',
+    email: 'ইমেইল', whatsapp: 'হোয়াটসঅ্যাপ নাম্বার', saving: 'সেভ হচ্ছে...', cont: 'রোডম্যাপে যান',
+    copied: 'কপি হয়েছে!', share: 'শেয়ার', shareText: 'এই রোডম্যাপটি দেখুন:', view: 'ভিউ মোড',
+  },
+};
 
 interface Roadmap {
   id: string;
@@ -28,6 +56,8 @@ interface Roadmap {
 const RoadmapDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { session } = useAuth();
+  const t = useT(T);
+  const reduce = useReducedMotion();
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'tree' | 'accordion'>('tree');
@@ -52,13 +82,13 @@ const RoadmapDetailPage = () => {
     e.preventDefault();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(guestEmail)) {
-      alert('Please enter a valid email address.');
+      alert(t.badEmail);
       return;
     }
     const cleanPhone = guestWhatsapp.replace(/[\s-]/g, '');
     const phoneRegex = /^\+?[0-9]{10,15}$/;
     if (!phoneRegex.test(cleanPhone)) {
-      alert('Please enter a valid WhatsApp number (e.g. +8801712345678).');
+      alert(t.badPhone);
       return;
     }
 
@@ -73,7 +103,7 @@ const RoadmapDetailPage = () => {
         .from('careerprep_guests')
         .upsert(payload, { onConflict: 'email' });
       if (error) {
-        alert(`Could not save your info: ${error.message}`);
+        alert(`${t.saveFail} ${error.message}`);
         setGuestSaving(false);
         return;
       }
@@ -82,7 +112,7 @@ const RoadmapDetailPage = () => {
       localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
       setShowGate(false);
     } catch (err) {
-      alert('Something went wrong. Please try again.');
+      alert(t.wrong);
     } finally {
       setGuestSaving(false);
     }
@@ -129,8 +159,8 @@ const RoadmapDetailPage = () => {
       <div className="min-h-screen">
         <Navbar />
         <div className="pt-24 pb-16 px-4 text-center">
-          <h1 className="text-2xl font-bold mb-4">Roadmap not found</h1>
-          <Button asChild variant="outline"><Link to="/roadmaps"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Roadmaps</Link></Button>
+          <h1 className="text-2xl font-bold mb-4">{t.notFound}</h1>
+          <Button asChild variant="outline"><Link to="/roadmaps"><ArrowLeft className="h-4 w-4 mr-2" /> {t.backAll}</Link></Button>
         </div>
       </div>
     );
@@ -142,9 +172,14 @@ const RoadmapDetailPage = () => {
       <div className="pt-28 sm:pt-28 pb-12 sm:pb-16 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="page-heading">
+          <motion.div
+            className="page-heading"
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.24, 1, 0.4, 1] }}
+          >
             <Link to="/roadmaps" className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-primary mb-3 sm:mb-4 transition-colors">
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" /> All Roadmaps
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" /> {t.all}
             </Link>
             <div className="flex items-start justify-between gap-3 mb-1.5 sm:mb-2">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex-1 min-w-0 break-words">{roadmap.title}</h1>
@@ -155,17 +190,17 @@ const RoadmapDetailPage = () => {
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{roadmap.description}</ReactMarkdown>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* View Toggle */}
-          <div className="flex items-center gap-1 sm:gap-2 mb-4 sm:mb-6 p-1 bg-muted rounded-lg w-fit">
+          <div role="group" aria-label={t.view} className="flex items-center gap-1 sm:gap-2 mb-4 sm:mb-6 p-1 bg-muted rounded-lg w-fit">
             <Button
               variant={viewMode === 'tree' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('tree')}
               className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3"
             >
-              <TreePine className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Tree
+              <TreePine className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> {t.tree}
             </Button>
             <Button
               variant={viewMode === 'accordion' ? 'default' : 'ghost'}
@@ -173,7 +208,7 @@ const RoadmapDetailPage = () => {
               onClick={() => setViewMode('accordion')}
               className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3"
             >
-              <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> List
+              <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> {t.list}
             </Button>
           </div>
 
@@ -188,20 +223,20 @@ const RoadmapDetailPage = () => {
 
           {/* Customize Guideline CTA */}
           {nodes.length > 0 && (
-            <div className="mt-10 sm:mt-14 rounded-2xl border border-primary/20 bg-muted p-6 sm:p-8 text-center shadow-sm">
+            <Reveal className="mt-10 sm:mt-14 rounded-2xl border border-primary/20 bg-muted p-6 sm:p-8 text-center shadow-sm">
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mb-3">
                 <MessageCircleQuestion className="w-6 h-6 text-primary" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-2">Need Customize Guideline?</h2>
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-5">
-                Get a personalized roadmap tailored to your goals, background, and timeline. Book a 1:1 session to plan your career journey.
+                {t.ctaBody}
               </p>
               <Button asChild size="lg" className="gap-2">
                 <Link to="/book-session">
-                  Book a Session <ArrowRight className="h-4 w-4" />
+                  {t.book} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-            </div>
+            </Reveal>
           )}
         </div>
       </div>
@@ -213,23 +248,23 @@ const RoadmapDetailPage = () => {
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
-            <DialogTitle className="text-center text-xl">Unlock the Full Roadmap</DialogTitle>
+            <DialogTitle className="text-center text-xl">{t.unlock}</DialogTitle>
             <DialogDescription className="text-center">
-              Enter your details to access this career roadmap. Free, no spam — just stay updated on new content.
+              {t.unlockBody}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleGuestSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="gate-email">Email</Label>
+              <Label htmlFor="gate-email">{t.email}</Label>
               <Input id="gate-email" type="email" placeholder="you@example.com" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gate-whatsapp">WhatsApp Number</Label>
+              <Label htmlFor="gate-whatsapp">{t.whatsapp}</Label>
               <Input id="gate-whatsapp" type="tel" placeholder="+8801712345678" value={guestWhatsapp} onChange={(e) => setGuestWhatsapp(e.target.value)} required />
             </div>
             <DialogFooter>
               <Button type="submit" className="w-full" disabled={guestSaving}>
-                {guestSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : 'Continue to Roadmap'}
+                {guestSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t.saving}</> : t.cont}
               </Button>
             </DialogFooter>
           </form>
@@ -240,11 +275,12 @@ const RoadmapDetailPage = () => {
 };
 
 const ShareButton = ({ title }: { title: string }) => {
+  const t = useT(T);
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    const shareData = { title, text: `Check out this roadmap: ${title}`, url };
+    const shareData = { title, text: `${t.shareText} ${title}`, url };
     if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
         await (navigator as any).share(shareData);
@@ -265,7 +301,7 @@ const ShareButton = ({ title }: { title: string }) => {
   return (
     <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 shrink-0 mt-1">
       {copied ? <Check className="h-4 w-4 text-primary" /> : <Share2 className="h-4 w-4" />}
-      <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
+      <span className="hidden sm:inline">{copied ? t.copied : t.share}</span>
     </Button>
   );
 };

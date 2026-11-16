@@ -15,9 +15,19 @@ import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 import { useTopic, useTopicNavigation, useTopicProgress } from '@/hooks/useTopics';
 import { recordLearningActivity } from '@/services/learningActivity';
 import { track } from '@/services/funnel';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useLang, useT } from '@/i18n/lang';
+
+const T = {
+  en: { nf: 'Topic not found', nfD: 'It may not be published yet.', back: 'Back to Career Prep', cp: 'Career Prep', passed: 'Passed', refs: 'Trusted references', refsD: 'Primary sources and open courses selected for a clear reason.', paid: 'paid', deeper: 'Go deeper', rec: 'Recorded course', free: 'Free', mat: 'Study material', freeEmail: 'Free with your email', live: 'Live session', wider: 'Want the wider map?', follows: 'This stage follows the', roadmapW: 'roadmap. It is optional context.', readMap: 'Read the roadmap', suffix: 'Career Prep', route: (j: string, i: string, n: string) => `${j} · Topic ${i} of ${n}`, guided: 'Career Prep · Guided Topic' },
+  bn: { nf: 'টপিক পাওয়া যায়নি', nfD: 'এটি হয়তো এখনও প্রকাশিত হয়নি।', back: 'Career Prep-এ ফিরুন', cp: 'Career Prep', passed: 'পাস', refs: 'নির্ভরযোগ্য রেফারেন্স', refsD: 'স্পষ্ট কারণে বাছাই করা প্রাইমারি সোর্স ও ওপেন কোর্স।', paid: 'পেইড', deeper: 'আরও গভীরে যান', rec: 'রেকর্ডেড কোর্স', free: 'ফ্রি', mat: 'স্টাডি ম্যাটেরিয়াল', freeEmail: 'ইমেইল দিলে ফ্রি', live: 'লাইভ সেশন', wider: 'বড় ম্যাপটি দেখতে চান?', follows: 'এই ধাপটি', roadmapW: 'রোডম্যাপ অনুসরণ করে। এটি ঐচ্ছিক প্রেক্ষাপট।', readMap: 'রোডম্যাপ পড়ুন', suffix: 'Career Prep', route: (j: string, i: string, n: string) => `${j} · ${n}টির মধ্যে টপিক ${i}`, guided: 'Career Prep · গাইডেড টপিক' },
+};
 
 const TopicPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const t = useT(T);
+  const { num } = useLang();
+  const reduce = useReducedMotion();
   const navigate = useNavigate();
   const { data, loading } = useTopic(slug);
   const { passed } = useTopicProgress();
@@ -27,7 +37,7 @@ const TopicPage = () => {
   const [checkpointPassed, setCheckpointPassed] = useState(false);
 
   useDocumentMeta({
-    title: data ? `${data.topic.title} — Career Prep` : undefined,
+    title: data ? `${data.topic.title} — ${t.suffix}` : undefined,
     description: data ? `${data.topic.what_it_is} ${data.topic.why_it_matters}`.slice(0, 200) : undefined,
   });
 
@@ -48,9 +58,9 @@ const TopicPage = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="mx-auto max-w-2xl px-4 pt-32 text-center">
-          <h1 className="text-2xl font-bold">Topic not found</h1>
-          <p className="mt-2 text-muted-foreground">It may not be published yet.</p>
-          <Button asChild className="mt-6 rounded-full"><Link to="/career-prep">Back to Career Prep</Link></Button>
+          <h1 className="text-2xl font-bold">{t.nf}</h1>
+          <p className="mt-2 text-muted-foreground">{t.nfD}</p>
+          <Button asChild className="mt-6 rounded-full"><Link to="/career-prep">{t.back}</Link></Button>
         </div>
       </div>
     );
@@ -65,8 +75,8 @@ const TopicPage = () => {
 
       {references.length > 0 ? (
         <section aria-labelledby="references-heading">
-          <h4 id="references-heading" className="font-extrabold">Trusted references</h4>
-          <p className="mt-1 text-sm text-muted-foreground">Primary sources and open courses selected for a clear reason.</p>
+          <h4 id="references-heading" className="font-extrabold">{t.refs}</h4>
+          <p className="mt-1 text-sm text-muted-foreground">{t.refsD}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {references.map((reference) => (
               <a key={reference.id} href={reference.url} target="_blank" rel="noopener noreferrer"
@@ -74,7 +84,7 @@ const TopicPage = () => {
                 className="flex min-h-16 items-start gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{reference.label}</span>{reference.note ? <span className="mt-1 block text-xs leading-5 text-muted-foreground">{reference.note}</span> : null}</span>
-                <Badge variant="outline" className="shrink-0 text-[10px]">{reference.is_free ? reference.kind : `${reference.kind} · paid`}</Badge>
+                <Badge variant="outline" className="shrink-0 text-[10px]">{reference.is_free ? reference.kind : `${reference.kind} · ${t.paid}`}</Badge>
               </a>
             ))}
           </div>
@@ -83,23 +93,23 @@ const TopicPage = () => {
 
       {(offers.course || offers.ebook || offers.webinar) ? (
         <section aria-labelledby="deeper-heading">
-          <h4 id="deeper-heading" className="font-extrabold">Go deeper</h4>
+          <h4 id="deeper-heading" className="font-extrabold">{t.deeper}</h4>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {offers.course ? (
               <button onClick={() => navigate(`/course/${offers.course!.id}`)} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><PlayCircle className="h-4 w-4" />Recorded course</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><PlayCircle className="h-4 w-4" />{t.rec}</span>
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.course.title}</span>
-                <span className="mt-2 block text-xs text-muted-foreground">{offers.course.is_free ? 'Free' : `৳${offers.course.price}`}</span>
+                <span className="mt-2 block text-xs text-muted-foreground">{offers.course.is_free ? t.free : `৳${num(Number(offers.course.price))}`}</span>
               </button>
             ) : offers.ebook ? (
               <button onClick={() => navigate('/career-prep')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><BookDown className="h-4 w-4" />Study material</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><BookDown className="h-4 w-4" />{t.mat}</span>
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.ebook.title}</span>
-                <span className="mt-2 block text-xs text-muted-foreground">Free with your email</span>
+                <span className="mt-2 block text-xs text-muted-foreground">{t.freeEmail}</span>
               </button>
             ) : offers.webinar ? (
               <button onClick={() => navigate('/webinars')} className="min-h-32 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><Video className="h-4 w-4" />Live session</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary"><Video className="h-4 w-4" />{t.live}</span>
                 <span className="mt-2 block text-sm font-bold leading-snug">{offers.webinar.title}</span>
                 {offers.webinar.webinar_date ? <span className="mt-2 block"><CourseCountdown startDate={offers.webinar.webinar_date} /></span> : null}
               </button>
@@ -110,9 +120,9 @@ const TopicPage = () => {
 
       {nav?.roadmap ? (
         <section className="rounded-2xl border border-border bg-muted/30 p-4" aria-labelledby="roadmap-heading">
-          <h4 id="roadmap-heading" className="font-extrabold">Want the wider map?</h4>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">This stage follows the <strong className="text-foreground">{nav.roadmap.title}</strong> roadmap. It is optional context.</p>
-          <Button variant="outline" className="mt-3 min-h-11 gap-2 rounded-full" onClick={() => navigate(`/roadmaps/${nav.roadmap!.slug}`)}><Map className="h-4 w-4" />Read the roadmap</Button>
+          <h4 id="roadmap-heading" className="font-extrabold">{t.wider}</h4>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">{t.follows} <strong className="text-foreground">{nav.roadmap.title}</strong> {t.roadmapW}</p>
+          <Button variant="outline" className="mt-3 min-h-11 gap-2 rounded-full" onClick={() => navigate(`/roadmaps/${nav.roadmap!.slug}`)}><Map className="h-4 w-4" />{t.readMap}</Button>
         </section>
       ) : null}
 
@@ -125,18 +135,18 @@ const TopicPage = () => {
       <Navbar />
       <main className="mx-auto max-w-6xl px-3 pb-10 pt-28 sm:px-5 sm:pt-28">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" className="min-h-11 gap-1.5 rounded-full text-muted-foreground" onClick={() => navigate('/career-prep')}><ArrowLeft className="h-4 w-4" />Career Prep</Button>
+          <Button variant="ghost" size="sm" className="min-h-11 gap-1.5 rounded-full text-muted-foreground" onClick={() => navigate('/career-prep')}><ArrowLeft className="h-4 w-4" />{t.cp}</Button>
 
         </div>
 
-        <div className="page-heading flex flex-wrap items-center gap-3 px-1">
+        <motion.div initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="page-heading flex flex-wrap items-center gap-3 px-1">
           <h1 className="max-w-4xl text-2xl font-black tracking-tight [overflow-wrap:anywhere] sm:text-3xl lg:text-4xl">{topic.title}</h1>
-          {isDone ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Passed</Badge> : null}
-        </div>
+          {isDone ? <Badge className="border-0 bg-success-soft text-success-strong"><CheckCircle2 className="mr-1 h-3.5 w-3.5" />{t.passed}</Badge> : null}
+        </motion.div>
 
         <TopicLearningBoard topic={topic} sections={sections} practice={practice} caseStudies={caseStudies}
           isDone={isDone} hasCheckpoint={!!checkpoint} toolkit={toolkit} nextTopic={nav?.next}
-          routeContext={nav?.journey && nav.index >= 0 ? `${nav.journey.title} · Topic ${nav.index + 1} of ${nav.sequence.length}` : 'Career Prep · Guided Topic'}
+          routeContext={nav?.journey && nav.index >= 0 ? t.route(nav.journey.title, num(nav.index + 1), num(nav.sequence.length)) : t.guided}
           onOpenQuestion={(questionSlug) => navigate(`/career-prep/solve/${questionSlug}`)}
           onOpenCheckpoint={() => setCheckpointOpen(true)}
           onOpenNext={() => nav?.next && navigate(`/career-prep/topic/${nav.next.slug}`)} />
