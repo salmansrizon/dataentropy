@@ -190,9 +190,9 @@ const AssessmentPage = () => {
             {loading ? (
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary opacity-40" />
             ) : (
-              <RevealGroup className="space-y-6">
+              <RevealGroup role="list" className="space-y-6">
                 {questions.map((q, i) => (
-                  <RevealItem key={q.id}>
+                  <RevealItem key={q.id} role="listitem">
                     <Card>
                       <CardContent className="p-5">
                         <div className="mb-2 flex items-center gap-2">

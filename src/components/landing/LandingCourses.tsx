@@ -137,10 +137,13 @@ export default function LandingCourses() {
                               <h3 className="line-clamp-1 text-base font-bold">{c.title}</h3>
                               <p className="line-clamp-1 text-sm text-muted-foreground">{c.short_description}</p>
                               <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-                                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                                  <Clock className="h-4 w-4" aria-hidden="true" />
-                                  {c.duration_hours ? `${num(c.duration_hours)} ${t.hours}` : "—"}
-                                </span>
+                                {/* no duration on record: hide the row instead of showing a bare "—" */}
+                                {c.duration_hours ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Clock className="h-4 w-4" aria-hidden="true" />
+                                    {num(c.duration_hours)} {t.hours}
+                                  </span>
+                                ) : <span />}
                                 <Link
                                   to={c.id.startsWith("sample-") ? "/courses" : `/course/${c.id}`}
                                   className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-primary transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

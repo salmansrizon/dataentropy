@@ -9,7 +9,7 @@ export default function LearningHeroVisual() {
   const t = useT(T);
   return (
     <div className="home-hero-portrait">
-      <img src="/images/data-professional-hero.png" alt={t.alt} width={1024} height={1536} fetchPriority="high" />
+      <img src="/images/data-professional-hero.jpg" alt={t.alt} width={800} height={1200} fetchPriority="high" />
     </div>
   );
 }

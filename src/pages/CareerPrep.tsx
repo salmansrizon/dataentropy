@@ -83,11 +83,11 @@ const CareerPrep = () => {
           </motion.figure>
           <div className="col-span-full"><WorkflowAnimation /></div>
           <div role="group" aria-label={t.routeLabel} className="col-span-full">
-            <RevealGroup className="learning-paths-route">
+            <RevealGroup role="list" className="learning-paths-route">
               {t.steps.map(([title, desc], i) => {
                 const Icon = ICONS[i];
                 return (
-                  <RevealItem key={title}>
+                  <RevealItem key={title} role="listitem">
                     <div className="flex items-center gap-[18px] py-3.5 transition-transform hover:-translate-y-1 motion-reduce:transform-none">
                       <Icon aria-hidden="true" /><div><strong>{title}</strong><small>{desc}</small></div>
                     </div>

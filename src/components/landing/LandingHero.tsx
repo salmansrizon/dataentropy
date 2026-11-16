@@ -87,7 +87,7 @@ export default function LandingHero() {
 
         <div className="relative mx-auto w-full max-w-md">
           {/* edges fade into the hero background (mask), so the photo has no visible border */}
-          <img src="/images/data-professional-hero.png" alt={t.alt} width={1024} height={1536} fetchPriority="high" className="hero-photo-fade relative z-10 block h-auto w-full" />
+          <img src="/images/data-professional-hero.jpg" alt={t.alt} width={800} height={1200} fetchPriority="high" className="hero-photo-fade relative z-10 block h-auto w-full" />
 
           <div aria-hidden className="landing-float absolute left-0 top-10 z-20 hidden rounded-2xl border border-brand-border bg-card p-3 shadow-lg sm:block">
             <div className="flex h-12 items-end gap-1.5">

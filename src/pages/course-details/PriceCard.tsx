@@ -60,7 +60,7 @@ export const PriceCard = ({ course, isFree, ctaLabel, onCta, onShare, sampleAvai
   const isYoutube = !!url && (url.includes("youtube.com") || url.includes("youtu.be"));
   const includes = course.course_includes?.length
     ? course.course_includes
-    : [course.access_terms, "Completion is recorded lesson by lesson"].filter((x): x is string => !!x);
+    : [course.access_terms, t.completion].filter((x): x is string => !!x);
 
   return (
     <motion.div
@@ -97,8 +97,8 @@ export const PriceCard = ({ course, isFree, ctaLabel, onCta, onShare, sampleAvai
             </span>
           </button>
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Layout className="h-12 w-12 text-muted-foreground/20" aria-hidden="true" />
+          <div className="flex h-full w-full items-center justify-center bg-brand-gradient">
+            <Layout className="h-12 w-12 text-primary-foreground/70" aria-hidden="true" />
           </div>
         )}
       </div>

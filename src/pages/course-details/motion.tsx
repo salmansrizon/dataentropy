@@ -19,11 +19,12 @@ export function Reveal({ children, delay = 0, className }: { children: ReactNode
 }
 
 /** Grid/list wrapper whose direct <RevealItem> children stagger in. */
-export function RevealGroup({ children, className }: { children: ReactNode; className?: string }) {
+export function RevealGroup({ children, className, role }: { children: ReactNode; className?: string; role?: string }) {
   const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
+  if (reduce) return <div className={className} role={role}>{children}</div>;
   return (
     <motion.div
+      role={role}
       className={className}
       initial="hidden"
       whileInView="show"
@@ -35,9 +36,10 @@ export function RevealGroup({ children, className }: { children: ReactNode; clas
   );
 }
 
-export function RevealItem({ children, className }: { children: ReactNode; className?: string }) {
+export function RevealItem({ children, className, role }: { children: ReactNode; className?: string; role?: string }) {
   return (
     <motion.div
+      role={role}
       className={className}
       variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
     >

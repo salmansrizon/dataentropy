@@ -51,7 +51,7 @@ const CourseHero = ({ course, totalLessons, reviewAverage, reviewCount, isFree, 
         <LottieAnimation src="/animations/learning-journey.json" className="h-72 w-72 xl:h-80 xl:w-80" />
       </div>
       <nav aria-label={t.breadcrumb} className="relative mb-5 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/courses" className="hover:text-foreground">{t.all}</Link>
+        <Link to="/courses" className="shrink-0 whitespace-nowrap hover:text-foreground">{t.all}</Link>
         <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className="truncate text-foreground">{course.title}</span>
       </nav>
