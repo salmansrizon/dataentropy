@@ -10,7 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { track } from "@/services/funnel";
 import { useCourseProgress } from "@/hooks/useCourseProgress";
 import { useAuth } from "@/contexts/AuthContext";
-import { COURSE_ACCESS_STATUSES } from "@/domain/courseEnrollment";
+import { isFreeCourse as isFreeCoursePricing, priceCourse } from "@/domain/coursePricing";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadCoursePage } from "./course-details/loadCoursePage";
 import type { Course, CourseContent, CourseReview, CourseSection, Instructor } from "./course-details/types";
 import { SECTION_IDS } from "./course-details/types";
 import CourseHero from "./course-details/CourseHero";
@@ -103,7 +105,6 @@ export default function CourseDetails() {
     }
   }, [courseId]);
 
-  const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [promo, setPromo] = useState<CoursePromo | null>(null);
   const t = useT(T);
   const salesPage = useMemo(() => {
@@ -131,137 +132,16 @@ export default function CourseDetails() {
   }, [courseId]);
 
   const fetchCourseDetails = useCallback(async () => {
+    if (!courseId) return;
     setLoading(true);
     try {
-      // 1. Fetch primary course data first (essential for other queries)
-      const { data: courseData, error: courseError } = await supabase
-        .from("courses")
-        .select("*, category:course_categories(name)")
-        .eq("id", courseId)
-        .single();
-
-      if (courseError) throw courseError;
-      const cData = courseData as any;
-      setCourse(cData);
-
-      // Do not ship paid payloads to locked learners. Outlines and free samples
-      // keep the catalog useful without exposing lesson content_data.
-      const isFreeCourse = cData.is_free || (!cData.price && !cData.discounted_price);
-      let hasPaidAccess = false;
-      if (!isFreeCourse && session?.user?.id) {
-        const { data: enrollment, error: enrollmentError } = await (supabase as any)
-          .from("course_enrollments")
-          .select("id")
-          .eq("course_id", courseId)
-          .eq("user_id", session.user.id)
-          .in("status", [...COURSE_ACCESS_STATUSES])
-          .maybeSingle();
-        if (enrollmentError) throw enrollmentError;
-        hasPaidAccess = Boolean(enrollment);
-      }
-      setPaidUnlocked(hasPaidAccess);
-
-      const outlineColumns = "id,course_id,section_id,title,description,content_type,is_free,duration_minutes,topics,order_index";
-      const contentResultPromise = isFreeCourse || hasPaidAccess
-        ? supabase.from("course_content").select("*").eq("course_id", courseId).order("order_index")
-        : (async () => {
-            const [outlineResult, sampleResult] = await Promise.all([
-              supabase.from("course_content_outline").select(outlineColumns).eq("course_id", courseId).order("order_index"),
-              supabase.from("course_content").select("*").eq("course_id", courseId).eq("is_free", true).order("order_index"),
-            ]);
-            if (outlineResult.error) {
-              const fallback = await supabase.from("course_content").select(outlineColumns).eq("course_id", courseId).order("order_index");
-              if (fallback.error) throw fallback.error;
-              return { data: [...(fallback.data ?? []), ...(sampleResult.data ?? [])], error: null };
-            }
-            const byId = new Map([...(outlineResult.data ?? []), ...(sampleResult.data ?? [])].map((item: any) => [item.id, item]));
-            return { data: Array.from(byId.values()), error: null };
-          })();
-
-      // Parallelize all independent secondary metadata queries
-      const [
-        instructorResult,
-        reviewsResult,
-        paymentResult,
-        sectionsResult,
-        contentResult,
-        relatedResult
-      ] = await Promise.all([
-        // Instructor fetch
-        (async () => {
-          const instrId = cData.instructor_id;
-          if (instrId) {
-            const { data } = await (supabase.from("instructors" as any).select("*").eq("id", instrId).single() as any);
-            return data;
-          } else {
-            const { data } = await (supabase.from("instructors" as any).select("*").contains("assigned_courses", [courseId]) as any);
-            return data && data.length > 0 ? data[0] : null;
-          }
-        })(),
-        // Reviews fetch
-        supabase.from("course_reviews" as any).select("*").eq("course_id", courseId).eq("is_approved", true).order("created_at", { ascending: false }),
-        // Payment settings fetch
-        supabase.from("payment_settings").select("*").limit(1).single(),
-        // Sections fetch
-        supabase.from("course_sections").select("*").eq("course_id", courseId).order("order_index"),
-        // Content fetch: full payload only for free/entitled learners
-        contentResultPromise,
-        // Related courses fetch
-        (async () => {
-           // We fire these in parallel internally too
-           const [catRelated, tagRelated] = await Promise.all([
-             (supabase.from("courses") as any).select("*").eq("category_id", cData.category_id).neq("id", courseId).limit(6),
-             (supabase.from("courses") as any).select("*").overlaps("technologies", cData.technologies || []).neq("id", courseId).limit(6)
-           ]);
-
-           let unique = Array.from(new Map([...(catRelated.data || []), ...(tagRelated.data || [])].map(c => [c.id, c])).values())
-            .filter(c => c.id !== courseId)
-            .slice(0, 3);
-
-           if (unique.length === 0) {
-             const { data } = await (supabase.from("courses") as any).select("*").neq("id", courseId).limit(3);
-             unique = (data || []) as Course[];
-           }
-           return unique;
-        })()
-      ]);
-
-      // 3. Batch state updates (React 18 handles this automatically, but logic is cleaner now)
-      if (instructorResult) setInstructor(instructorResult as Instructor);
-      setReviews((reviewsResult.data as any || []) as CourseReview[]);
-      if (paymentResult.data) setPaymentSettings(paymentResult.data);
-      setRelatedCourses(relatedResult as Course[]);
-
-      // Process sections and content
-      if (contentResult.error) throw contentResult.error;
-      const sectionsData = sectionsResult.data || [];
-      const contentData = contentResult.data || [];
-
-      const sectionsMap = new Map<string, CourseSection>();
-      sectionsData.forEach(section => {
-        sectionsMap.set(section.id, { ...section, contents: [] });
-      });
-
-      const uncategorizedContent: CourseContent[] = [];
-      contentData.forEach(item => {
-        if (item.section_id && sectionsMap.has(item.section_id)) {
-          sectionsMap.get(item.section_id)!.contents!.push(item);
-        } else {
-          uncategorizedContent.push(item);
-        }
-      });
-
-      const organizedSections = Array.from(sectionsMap.values());
-      if (uncategorizedContent.length > 0) {
-        organizedSections.push({
-          id: "uncategorized",
-          title: organizedSections.length > 0 ? "Additional Materials" : "Course Modules",
-          order_index: 999,
-          contents: uncategorizedContent
-        });
-      }
-      setSections(organizedSections);
-
+      const page = await loadCoursePage(supabase as unknown as SupabaseClient, courseId, session?.user?.id ?? null);
+      setCourse(page.course);
+      setPaidUnlocked(page.paidAccess);
+      setSections(page.sections);
+      if (page.instructor) setInstructor(page.instructor);
+      setReviews(page.reviews);
+      setRelatedCourses(page.related);
     } catch (error) {
       console.error("Error fetching course details:", error);
       toast({
@@ -295,7 +175,7 @@ export default function CourseDetails() {
           institute_name: data.extras.institute_name,
           payment_method: course?.is_free ? 'free' : data.paymentMethod,
           transaction_id: course?.is_free ? null : data.transactionId,
-          promo_code: course?.is_free ? null : data.promoCode ?? null,
+          promo_code: course && priceCourse(course).acceptsPromo ? data.promoCode ?? null : null,
         });
 
       if (error) throw error;
@@ -307,7 +187,7 @@ export default function CourseDetails() {
         description: "Successfully enrolled in the course!",
       });
 
-      if (course?.is_free || (!course?.price && !course?.discounted_price)) {
+      if (course && isFreeCoursePricing(course)) {
         setCookie(`free_course_unlocked_${courseId}`, '1');
         setFreeUnlocked(true);
       }
@@ -398,7 +278,8 @@ export default function CourseDetails() {
     );
   }
 
-  const isFree = course.is_free || (!course.price && !course.discounted_price);
+  const pricing = priceCourse(course);
+  const isFree = pricing.kind === 'free';
   const totalLessons = sections.reduce((total, section) => total + (section.contents?.length ?? 0), 0);
   const completedLessons = sections.flatMap((section) => section.contents ?? []).filter((item) => courseProgress.completedIds.has(item.id)).length;
   const sampleContentId = sections.flatMap((section) => section.contents ?? []).find((content) => content.is_free)?.id ?? null;
@@ -438,7 +319,7 @@ export default function CourseDetails() {
       title={`Enroll in ${course.title}`}
       isFree={isFree}
       collectWhatsapp={!isFree}
-      priceLabel={isFree ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
+      priceLabel={pricing.kind === 'paid' ? `৳${pricing.charge}` : undefined}
       onSubmit={handleEnrollment}
       extraFields={isFree ? [] : [
         { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
@@ -446,7 +327,7 @@ export default function CourseDetails() {
       ]}
       submitLabel="Confirm Enrollment"
       confirmationType="enrollment"
-      collectPromoCode={!isFree}
+      collectPromoCode={pricing.acceptsPromo}
     />
   );
 
@@ -482,7 +363,7 @@ export default function CourseDetails() {
         </div>
       ) : (
         <div className="pt-16">
-          <PromoBar promo={isFree ? null : promo} onApply={startCheckout} />
+          <PromoBar promo={pricing.acceptsPromo ? promo : null} onApply={startCheckout} />
           <div className="pt-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               <div className="w-full lg:w-[65%] min-w-0">

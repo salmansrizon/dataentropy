@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { priceCourse } from "@/domain/coursePricing";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -158,6 +159,7 @@ interface FormData {
   price: number | null;
   discounted_price: number | null;
   discount_percentage: number | null;
+  promo_only: boolean;
   is_free: boolean;
   status: string // Changed to string to handle form input more flexibly;
   difficulty_level: string // Changed to string to handle form input more flexibly;
@@ -192,6 +194,7 @@ const initialFormData: FormData = {
   price: 0,
   discounted_price: null,
   discount_percentage: null,
+  promo_only: false,
   is_free: false,
   status: 'draft',
   difficulty_level: 'beginner',
@@ -268,6 +271,7 @@ export default function CourseManager() {
             price: formData.price,
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
+            promo_only: formData.promo_only,
             is_free: formData.is_free,
             status: formData.status,
             difficulty_level: formData.difficulty_level,
@@ -306,6 +310,7 @@ export default function CourseManager() {
             price: formData.price,
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
+            promo_only: formData.promo_only,
             is_free: formData.is_free,
             status: formData.status,
             difficulty_level: formData.difficulty_level,
@@ -680,6 +685,7 @@ export default function CourseManager() {
         price: courseData.price || 0,
         discounted_price: courseData.discounted_price || null,
         discount_percentage: courseData.discount_percentage || null,
+        promo_only: Boolean(courseData.promo_only),
         is_free: Boolean(courseData.is_free),
         status: courseData.status || 'draft',
         difficulty_level: courseData.difficulty_level || 'beginner',
@@ -1044,6 +1050,19 @@ export default function CourseManager() {
                         onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
                       />
                       <Label htmlFor="is_free">Free Course</Label>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <Switch
+                        id="promo_only"
+                        checked={formData.promo_only}
+                        onCheckedChange={(checked) => setFormData({ ...formData, promo_only: checked })}
+                      />
+                      <div>
+                        <Label htmlFor="promo_only">Promo-Only Pricing</Label>
+                        <p className="text-xs text-muted-foreground">
+                          On: list at full price, discount only via promo code at checkout. Off: charge the discounted price, no promo codes.
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category_id">Category</Label>
@@ -1556,12 +1575,17 @@ export default function CourseManager() {
                       <div className="flex items-center gap-1">
                         <span>💰</span>
                         <span>
-                          {course.is_free ? 'Free' : (course.discounted_price ? (
-                            <>
-                              ৳{course.discounted_price}
-                              <span className="line-through ml-1">৳{course.price}</span>
-                            </>
-                          ) : `৳${course.price}`)}
+                          {(() => {
+                            const p = priceCourse(course);
+                            if (p.kind === 'free') return 'Free';
+                            return (
+                              <>
+                                ৳{p.charge}
+                                {p.listPrice && <span className="line-through ml-1">৳{p.listPrice}</span>}
+                                {p.acceptsPromo && <span className="ml-1">(promo-only)</span>}
+                              </>
+                            );
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">

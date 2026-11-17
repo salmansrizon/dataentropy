@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang, useT, type Bi } from "@/i18n/lang";
 import { parseSalesPage } from "@/pages/course-details/salesPage";
+import { priceCourse } from "@/domain/coursePricing";
 import { USE_SAMPLE, sampleCategories, sampleCourses } from "@/content/sampleContent";
 
 const T = {
@@ -52,6 +53,7 @@ type Course = {
   discounted_price: number | null;
   discount_percentage: number | null;
   is_free: boolean | null;
+  promo_only?: boolean | null;
   student_count: number | null;
   banner_image: string | null;
 };
@@ -71,7 +73,7 @@ export default function FeaturedCourses() {
     Promise.all([
       supabase
         .from("courses")
-        .select("id,title,category_id,start_date,sales_page,price,discounted_price,discount_percentage,is_free,student_count,banner_image")
+        .select("id,title,category_id,start_date,sales_page,price,discounted_price,discount_percentage,promo_only,is_free,student_count,banner_image")
         .eq("status", "published")
         .order("start_date", { ascending: true, nullsFirst: false }),
       supabase.from("course_categories").select("id,name"),
@@ -146,10 +148,7 @@ export default function FeaturedCourses() {
               <SideArrows onPrev={() => scroll(-1)} onNext={() => scroll(1)} prevLabel={t.prev} nextLabel={t.next} />
               <ul ref={track} className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-1 pb-4 pt-1">
                 {shown.map((c) => {
-                  const price = Number(c.price ?? 0);
-                  const sale = Number(c.discounted_price ?? 0);
-                  const discounted = !c.is_free && sale > 0 && sale < price;
-                  const pct = c.discount_percentage || (discounted ? Math.round((1 - sale / price) * 100) : 0);
+                  const p = priceCourse(c);
                   const batch = parseSalesPage(c.sales_page).batch;
                   const left = batch?.seats_left;
                   return (
@@ -180,15 +179,15 @@ export default function FeaturedCourses() {
                             )}
                           </div>
                           <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-                            {c.is_free ? (
+                            {p.kind === "free" ? (
                               <span className="text-lg font-black text-primary">{t.free}</span>
                             ) : (
                               <span className="flex flex-wrap items-center gap-2">
-                                <span className="text-lg font-black text-foreground">৳{num(discounted ? sale : price)}</span>
-                                {discounted && (
+                                <span className="text-lg font-black text-foreground">৳{num(p.charge)}</span>
+                                {p.listPrice && (
                                   <>
-                                    <span className="text-sm text-muted-foreground line-through">৳{num(price)}</span>
-                                    {pct > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">-{num(pct)}%</span>}
+                                    <span className="text-sm text-muted-foreground line-through">৳{num(p.listPrice)}</span>
+                                    {p.discountPercent ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">-{num(p.discountPercent)}%</span> : null}
                                   </>
                                 )}
                               </span>

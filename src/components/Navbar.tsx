@@ -17,16 +17,16 @@ import { useT } from "@/i18n/lang"
 
 const T = {
   en: {
-    courses: "Courses", allCourses: "All courses", selfLearn: "Self-learning", roadmaps: "Roadmaps",
-    resources: "Resources", library: "Career Prep library", portfolio: "Portfolio", book: "Book a session",
-    community: "Community", blog: "Blog",
-    signIn: "Sign in", start: "Start now", menu: "Toggle menu", main: "Main navigation",
+    courses: "Build Your Career", allCourses: "All Courses", selfLearn: "Guided Learning", roadmaps: "Career Roadmaps",
+    resources: "Practice & Grow", library: "Practice Library", portfolio: "Portfolio", book: "Book a Consultation",
+    blog: "Blog",
+    signIn: "Sign in", start: "Get Started", menu: "Toggle menu", main: "Main navigation",
   },
   bn: {
-    courses: "কোর্সসমূহ", allCourses: "সব কোর্স", selfLearn: "নিজে শিখুন", roadmaps: "রোডম্যাপ",
-    resources: "রিসোর্স", library: "ক্যারিয়ার প্রস্তুতি লাইব্রেরি", portfolio: "পোর্টফোলিও", book: "সেশন বুক করুন",
-    community: "কমিউনিটি", blog: "ব্লগ",
-    signIn: "সাইন ইন", start: "এখনই শুরু করুন", menu: "মেনু খুলুন/বন্ধ করুন", main: "প্রধান মেনু",
+    courses: "ক্যারিয়ার গড়ুন", allCourses: "সব কোর্স", selfLearn: "গাইডেড লার্নিং", roadmaps: "ক্যারিয়ার রোডম্যাপ",
+    resources: "প্র্যাকটিস ও গ্রোথ", library: "প্র্যাকটিস লাইব্রেরি", portfolio: "পোর্টফোলিও", book: "কনসালটেশন বুক করুন",
+    blog: "ব্লগ",
+    signIn: "সাইন ইন", start: "শুরু করুন", menu: "মেনু খুলুন/বন্ধ করুন", main: "প্রধান মেনু",
   },
 }
 
@@ -59,7 +59,6 @@ const Navbar = () => {
         { name: t.book, href: "/book-session" },
       ],
     },
-    { name: t.community, href: "/career-prep", match: [] },
     { name: t.blog, href: "/blog", match: ["/blog"] },
   ]
 

@@ -27,6 +27,7 @@ export interface Course {
   price?: number;
   discounted_price?: number;
   discount_percentage?: number;
+  promo_only?: boolean | null;
   is_free: boolean;
   difficulty_level?: string;
   duration_hours?: number;

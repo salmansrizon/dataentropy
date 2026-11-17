@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { format, addMinutes } from "date-fns";
+import { format } from "date-fns";
 import Navbar from "@/components/Navbar";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLang, useT } from "@/i18n/lang";
@@ -15,10 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarIcon, Clock, Phone, Mail, User, CreditCard, CheckCircle2, Timer, ArrowRight, Smartphone, Tag, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarIcon, Clock, Phone, Mail, User, CheckCircle2, ArrowRight, Smartphone, Tag, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBookingData } from "@/hooks/useBookingData";
 import { usePageView } from "@/hooks/usePageView";
+import { PaymentMethodPanel, usePaymentWindow } from "@/components/PaymentModal";
 
 
 
@@ -76,11 +77,9 @@ const BookSession = () => {
   const fade = reduce
     ? {}
     : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 }, transition: { duration: 0.25 } };
-  const { sessionTypes, paymentSettings, unavailableSlots, isDateUnavailable, getAllTimeSlotsWithAvailability, availabilitySettings } = useBookingData();
+  const { sessionTypes, unavailableSlots, isDateUnavailable, getAllTimeSlotsWithAvailability, availabilitySettings } = useBookingData();
   const [step, setStep] = useState<Step>('details');
   const [selectedSessionType, setSelectedSessionType] = useState<string>('');
-  const [paymentDeadline, setPaymentDeadline] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState<string>('');
   const [bookingId, setBookingId] = useState<string>('');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
@@ -95,26 +94,12 @@ const BookSession = () => {
     transactionId: '',
   });
 
-  // Countdown timer for payment window
-  useEffect(() => {
-    if (!paymentDeadline) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = paymentDeadline.getTime() - now.getTime();
-      if (diff <= 0) {
-        setTimeLeft('Expired');
-        clearInterval(interval);
-        return;
-      }
-      const mins = Math.floor(diff / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [paymentDeadline]);
-
   const selectedSession = sessionTypes.find(s => s.id === selectedSessionType);
   const isFree = selectedSession ? !selectedSession.is_paid : false;
+  const paymentWindow = usePaymentWindow({
+    enabled: !!selectedSession && !isFree,
+    running: step === 'details' && !!selectedSession && !isFree && !!formData.paymentMethod,
+  });
 
   const handleBookingSubmit = async () => {
     const paymentMethodRequired = !isFree;
@@ -132,7 +117,7 @@ const BookSession = () => {
         toast({ title: t.errTitle, description: t.errTxn, variant: "destructive" });
         return;
       }
-      if (timeLeft === 'Expired') {
+      if (paymentWindow.expired) {
         toast({ title: t.errTitle, description: t.errExpired, variant: "destructive" });
         return;
       }
@@ -152,7 +137,7 @@ const BookSession = () => {
         payment_status: isFree ? 'not_required' : 'submitted',
         booking_status: isFree ? 'confirmed' : 'pending',
         transaction_id: isFree ? null : formData.transactionId,
-        payment_deadline: paymentDeadline?.toISOString(),
+        payment_deadline: isFree ? undefined : new Date(paymentWindow.deadline()).toISOString(),
       }).select().single();
 
       if (error) throw error;
@@ -166,10 +151,6 @@ const BookSession = () => {
 
   const handleSelectPaymentMethod = (method: 'bkash' | 'nagad') => {
     setFormData(p => ({ ...p, paymentMethod: method }));
-    if (!paymentDeadline) {
-      const windowMins = paymentSettings?.payment_window_minutes || 30;
-      setPaymentDeadline(addMinutes(new Date(), windowMins));
-    }
   };
 
   return (
@@ -320,85 +301,16 @@ const BookSession = () => {
                     </div>
                   </div>
 
-                  {/* Only show payment method selector for paid sessions */}
+                  {/* Paid sessions: same bKash/Nagad panel as course and webinar checkout */}
                   {selectedSession && !isFree && (
-                    <div className="space-y-2">
-                      <Label>{t.payMethod}</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {(['bkash', 'nagad'] as const).map(method => (
-                          <Button
-                            key={method}
-                            type="button"
-                            variant="outline"
-                            className={cn(
-                              "h-14 text-base font-semibold transition-all",
-                              formData.paymentMethod === method
-                                ? method === 'bkash' ? "border-brand-bkash bg-brand-bkash-soft text-brand-bkash-soft-foreground" : "border-brand-nagad bg-brand-nagad-soft text-brand-nagad-soft-foreground"
-                                : "hover:border-primary/40"
-                            )}
-                            onClick={() => handleSelectPaymentMethod(method)}
-                          >
-                            <CreditCard className="h-5 w-5 mr-2" />
-                            {method === 'bkash' ? t.bkash : t.nagad}
-                          </Button>
-                        ))}
-                      </div>
-
-                      {/* Display QR & transaction input inline if selected and not expired */}
-                      {formData.paymentMethod && timeLeft !== 'Expired' && (
-                        <div className={cn(
-                          "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
-                          formData.paymentMethod === 'bkash' ? "border-brand-bkash/60 bg-brand-bkash-soft" : "border-brand-nagad/60 bg-brand-nagad-soft"
-                        )}>
-                          <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
-                             <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
-                                <Timer className="h-4 w-4" /> 
-                                {timeLeft.replace(/\d/g, d => num(Number(d)))} {t.left}
-                             </div>
-                             <h4 className="font-semibold text-foreground text-sm">
-                               {t.fee} <span className="font-bold text-lg text-primary">৳{num(Number(selectedSession.fee))}</span>
-                             </h4>
-                          </div>
-                          
-                          <p className="text-2xl font-mono font-bold text-foreground">
-                            {formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_number : paymentSettings?.nagad_number}
-                          </p>
-
-                          {(formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code : paymentSettings?.nagad_qr_code) && (
-                            <div className="mx-auto w-44 h-44 bg-scan p-2 rounded-xl shadow-sm my-4">
-                              <img 
-                                src={formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code! : paymentSettings?.nagad_qr_code!} 
-                                alt={`${formData.paymentMethod === 'bkash' ? t.bkash : t.nagad} ${t.qrAlt}`} 
-                                className="w-full h-full object-contain"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            </div>
-                          )}
-                          
-                          <p className="text-sm font-medium opacity-80 max-w-[280px] mx-auto">
-                            {t.scan}
-                          </p>
-
-                          {paymentSettings?.additional_instructions && (
-                            <p className="text-sm text-muted-foreground pt-2 border-t border-border">
-                              {paymentSettings.additional_instructions}
-                            </p>
-                          )}
-
-                          <div className="space-y-1.5 pt-4 text-left">
-                            <Label htmlFor="txnId" className="font-semibold text-sm">{t.txnLabel} <span className="text-destructive">*</span></Label>
-                            <Input
-                              id="txnId"
-                              value={formData.transactionId}
-                              onChange={e => setFormData(p => ({ ...p, transactionId: e.target.value }))}
-                              placeholder={t.txnPh}
-                              className="font-mono h-11 uppercase bg-background"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <PaymentMethodPanel
+                      method={formData.paymentMethod}
+                      onMethodChange={handleSelectPaymentMethod}
+                      priceLabel={`৳${num(Number(selectedSession.fee))}`}
+                      transactionId={formData.transactionId}
+                      onTransactionIdChange={(value) => setFormData(p => ({ ...p, transactionId: value }))}
+                      paymentWindow={paymentWindow}
+                    />
                   )}
 
                   {/* Free session info banner */}
@@ -413,19 +325,12 @@ const BookSession = () => {
                   )}
 
                   <div className="pt-2 space-y-3">
-                    {timeLeft === 'Expired' && !isFree && (
-                      <div className="bg-destructive/10 rounded-lg p-4 text-center">
-                        <p className="text-destructive font-semibold">{t.winExpired}</p>
-                        <Button className="mt-2" variant="outline" onClick={() => window.location.reload()}>{t.reload}</Button>
-                      </div>
-                    )}
-
                     <Button
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                       size="lg"
                       onClick={handleBookingSubmit}
                       disabled={
-                        timeLeft === 'Expired' ||
+                        paymentWindow.expired ||
                         !formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType ||
                         (!isFree && (!formData.paymentMethod || !formData.transactionId.trim()))
                       }

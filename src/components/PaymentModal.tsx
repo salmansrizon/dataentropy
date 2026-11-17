@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,8 @@ export interface PaymentModalData {
   extras: Record<string, string>;
   /** Uppercased, trimmed promo code; only set when collectPromoCode is on and non-empty. */
   promoCode?: string;
+  /** ISO time the payment window closes; set for paid checkouts only. */
+  paymentDeadline?: string;
 }
 
 const DEFAULT_WINDOW_MINUTES = 30;
@@ -83,6 +85,8 @@ const T = {
     status: "Status",
     pending: "Pending Verification",
     close: "Close",
+    confirm: "Confirm Booking",
+    confirmFree: "Confirm Free Booking",
   },
   bn: {
     promo: "প্রোমো কোড (ঐচ্ছিক)",
@@ -125,6 +129,8 @@ const T = {
     status: "স্ট্যাটাস",
     pending: "যাচাইয়ের অপেক্ষায়",
     close: "বন্ধ করুন",
+    confirm: "বুকিং নিশ্চিত করুন",
+    confirmFree: "ফ্রি বুকিং নিশ্চিত করুন",
   },
 };
 
@@ -147,14 +153,221 @@ export interface PaymentModalProps {
   /** Called with form data when user clicks submit.
    *  The consumer is responsible for the Supabase insert. */
   onSubmit: (data: PaymentModalData) => Promise<void>;
-  /** Label for the submit button. Defaults to "Confirm" */
+  /** Label for the submit button. Defaults to a localized "Confirm Booking". */
   submitLabel?: string;
-  /** Label shown for free items. Defaults to "Confirm Free Booking" */
+  /** Label shown for free items. Defaults to a localized "Confirm Free Booking". */
   freeSubmitLabel?: string;
   /** Changes generic booking copy for course enrollment flows. */
   confirmationType?: "booking" | "enrollment";
   /** Show an optional promo code input. Default false. */
   collectPromoCode?: boolean;
+}
+
+// ── Shared payment window + bKash/Nagad panel ────────────────────
+// One checkout look for every paid flow: PaymentModal (courses, webinars)
+// and the inline session-booking form both render PaymentMethodPanel.
+export type PaymentMethod = "bkash" | "nagad" | "";
+
+export function usePaymentWindow({ enabled, running }: { enabled: boolean; running: boolean }) {
+  const { num } = useLang();
+  const { paymentSettings } = useBookingData();
+  const [fetchedWindow, setFetchedWindow] = useState<number | null>(null);
+  const settingsWindow = paymentSettings?.payment_window_minutes;
+  useEffect(() => {
+    if (settingsWindow || fetchedWindow !== null || !enabled) return;
+    let cancelled = false;
+    supabase
+      .from("payment_settings")
+      .select("payment_window_minutes")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!cancelled) setFetchedWindow(error || !data?.payment_window_minutes ? DEFAULT_WINDOW_MINUTES : data.payment_window_minutes);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [settingsWindow, fetchedWindow, enabled]);
+  const windowMins = settingsWindow || fetchedWindow || DEFAULT_WINDOW_MINUTES;
+  const totalSeconds = windowMins * 60;
+
+  const [remaining, setRemaining] = useState(totalSeconds);
+  const [timerRun, setTimerRun] = useState(0);
+  const deadlineRef = useRef(0);
+  useEffect(() => {
+    if (!running) {
+      setRemaining(totalSeconds);
+      return;
+    }
+    const end = Date.now() + totalSeconds * 1000;
+    deadlineRef.current = end;
+    setRemaining(totalSeconds);
+    const id = setInterval(() => {
+      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      setRemaining(left);
+      if (left === 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running, totalSeconds, timerRun]);
+  const [mm, ss] = mmss(remaining);
+  return {
+    windowMins,
+    totalSeconds,
+    remaining,
+    expired: running && remaining === 0,
+    lowTime: remaining < 300,
+    clock: `${num(mm).padStart(2, num(0))}:${num(ss).padStart(2, num(0))}`,
+    /** Epoch ms the current window closes. */
+    deadline: () => deadlineRef.current,
+    restart: () => setTimerRun((n) => n + 1),
+  };
+}
+
+export function PaymentMethodPanel({
+  method,
+  onMethodChange,
+  priceLabel,
+  transactionId,
+  onTransactionIdChange,
+  paymentWindow,
+}: {
+  method: PaymentMethod;
+  onMethodChange: (method: "bkash" | "nagad") => void;
+  priceLabel?: string;
+  transactionId: string;
+  onTransactionIdChange: (value: string) => void;
+  paymentWindow: ReturnType<typeof usePaymentWindow>;
+}) {
+  const t = useT(T);
+  const { num } = useLang();
+  const { paymentSettings } = useBookingData();
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">{t.paymentMethod}</Label>
+      <div className="grid grid-cols-2 gap-3">
+        {(["bkash", "nagad"] as const).map((method) => (
+          <Button
+            key={method}
+            type="button"
+            variant="outline"
+            className={cn(
+              "h-14 text-base font-semibold transition-all",
+              method === method
+                ? method === "bkash"
+                  ? "border-brand-bkash bg-brand-bkash-soft text-brand-bkash-soft-foreground"
+                  : "border-brand-nagad bg-brand-nagad-soft text-brand-nagad-soft-foreground"
+                : "hover:border-primary/40"
+            )}
+            onClick={() => onMethodChange(method)}
+          >
+            <CreditCard className="h-5 w-5 mr-2" />
+            {method === "bkash" ? t.bkash : t.nagad}
+          </Button>
+        ))}
+      </div>
+
+      {/* QR / account / txn input */}
+      {method && (
+        <div
+          className={cn(
+            "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
+            method === "bkash"
+              ? "border-brand-bkash/60 bg-brand-bkash-soft"
+              : "border-brand-nagad/60 bg-brand-nagad-soft"
+          )}
+        >
+          <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
+            <div className="text-left text-sm font-semibold text-foreground">{t.paymentDetails}</div>
+            {priceLabel && (
+              <h4 className="font-semibold text-foreground text-sm">
+                {t.fee}{" "}
+                <span className="font-bold text-lg text-primary">
+                  {priceLabel}
+                </span>
+              </h4>
+            )}
+          </div>
+
+          <div className="space-y-1.5 text-left">
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums",
+                  paymentWindow.lowTime ? "bg-destructive/10 text-destructive" : "bg-background/60 text-foreground"
+                )}
+              >
+                {paymentWindow.expired ? t.expired : `${t.timeLeft} ${paymentWindow.clock}`}
+              </span>
+              {paymentWindow.expired && (
+                <Button type="button" size="sm" variant="outline" onClick={() => paymentWindow.restart}>
+                  {t.restart}
+                </Button>
+              )}
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-background/60">
+              <div
+                className={cn("h-full rounded-full transition-[width] duration-1000 ease-linear", paymentWindow.lowTime ? "bg-destructive" : "bg-primary")}
+                style={{ width: `${(paymentWindow.remaining / paymentWindow.totalSeconds) * 100}%` }}
+              />
+            </div>
+            <span className="sr-only" aria-live="polite">
+              {t.timeLeftSr(num(Math.ceil(paymentWindow.remaining / 60)))}
+            </span>
+          </div>
+
+          <p className="text-2xl font-mono font-bold text-foreground">
+            {method === "bkash"
+              ? paymentSettings?.bkash_number
+              : paymentSettings?.nagad_number}
+          </p>
+
+          {(method === "bkash"
+            ? paymentSettings?.bkash_qr_code
+            : paymentSettings?.nagad_qr_code) && (
+            <div className="mx-auto w-44 h-44 bg-scan rounded-xl shadow-sm my-4 overflow-hidden border border-border/50">
+              <img
+                src={
+                  method === "bkash"
+                    ? paymentSettings?.bkash_qr_code!
+                    : paymentSettings?.nagad_qr_code!
+                }
+                alt={t.qrAlt(method === "bkash" ? t.bkash : t.nagad)}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          )}
+
+          <p className="text-sm font-medium opacity-80 max-w-[280px] mx-auto">
+            {t.scanInstruction} {t.windowInstruction(num(paymentWindow.windowMins))}
+          </p>
+
+          {/* Skip admin text that only repeats the built-in (localized) window line. */}
+          {paymentSettings?.additional_instructions &&
+            paymentSettings.additional_instructions.trim() !== T.en.windowInstruction(String(paymentWindow.windowMins)) && (
+            <p className="text-sm text-muted-foreground pt-2 border-t border-border">
+              {paymentSettings.additional_instructions}
+            </p>
+          )}
+
+          <div className="space-y-1.5 pt-4 text-left">
+            <Label htmlFor="pm-txnId" className="font-semibold text-sm">
+              {t.txnLabel}{" "}
+              <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="pm-txnId"
+              value={transactionId}
+              onChange={(e) => onTransactionIdChange(e.target.value)}
+              placeholder={t.txnPh}
+              className="font-mono h-11 uppercase bg-background"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -167,8 +380,8 @@ const PaymentModal = ({
   extraFields = [],
   collectWhatsapp = true,
   onSubmit,
-  submitLabel = "Confirm Booking",
-  freeSubmitLabel = "Confirm Free Booking",
+  submitLabel,
+  freeSubmitLabel,
   confirmationType = "booking",
   collectPromoCode = false,
 }: PaymentModalProps) => {
@@ -189,47 +402,7 @@ const PaymentModal = ({
   const [success, setSuccess] = useState(false);
 
   // ── Payment window countdown ─────────────────────────────────
-  const [fetchedWindow, setFetchedWindow] = useState<number | null>(null);
-  const settingsWindow = paymentSettings?.payment_window_minutes;
-  useEffect(() => {
-    if (settingsWindow || fetchedWindow !== null || isFree || !open) return;
-    let cancelled = false;
-    supabase
-      .from("payment_settings")
-      .select("payment_window_minutes")
-      .limit(1)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!cancelled) setFetchedWindow(error || !data?.payment_window_minutes ? DEFAULT_WINDOW_MINUTES : data.payment_window_minutes);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [settingsWindow, fetchedWindow, isFree, open]);
-  const windowMins = settingsWindow || fetchedWindow || DEFAULT_WINDOW_MINUTES;
-  const totalSeconds = windowMins * 60;
-
-  const timerActive = open && !isFree && !!paymentMethod && !success;
-  const [remaining, setRemaining] = useState(totalSeconds);
-  const [timerRun, setTimerRun] = useState(0);
-  useEffect(() => {
-    if (!timerActive) {
-      setRemaining(totalSeconds);
-      return;
-    }
-    const end = Date.now() + totalSeconds * 1000;
-    setRemaining(totalSeconds);
-    const id = setInterval(() => {
-      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-      setRemaining(left);
-      if (left === 0) clearInterval(id);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [timerActive, totalSeconds, timerRun]);
-  const expired = timerActive && remaining === 0;
-  const [mm, ss] = mmss(remaining);
-  const clock = `${num(mm).padStart(2, num(0))}:${num(ss).padStart(2, num(0))}`;
-  const lowTime = remaining < 300;
+  const paymentWindow = usePaymentWindow({ enabled: open && !isFree, running: open && !isFree && !!paymentMethod && !success });
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -292,6 +465,7 @@ const PaymentModal = ({
         transactionId,
         extras,
         ...(collectPromoCode && promoCode.trim() ? { promoCode: promoCode.trim().toUpperCase() } : {}),
+        ...(!isFree ? { paymentDeadline: new Date(paymentWindow.deadline()).toISOString() } : {}),
       });
       setSuccess(true);
     } catch (err: any) {
@@ -307,7 +481,7 @@ const PaymentModal = ({
 
   const isSubmitDisabled =
     submitting ||
-    expired ||
+    paymentWindow.expired ||
     !name ||
     !email ||
     (!isFree && (!paymentMethod || !transactionId.trim()));
@@ -448,129 +622,14 @@ const PaymentModal = ({
 
               {/* ── Payment Section (paid only) ─────────────── */}
               {!isFree && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold">{t.paymentMethod}</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(["bkash", "nagad"] as const).map((method) => (
-                      <Button
-                        key={method}
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "h-14 text-base font-semibold transition-all",
-                          paymentMethod === method
-                            ? method === "bkash"
-                              ? "border-brand-bkash bg-brand-bkash-soft text-brand-bkash-soft-foreground"
-                              : "border-brand-nagad bg-brand-nagad-soft text-brand-nagad-soft-foreground"
-                            : "hover:border-primary/40"
-                        )}
-                        onClick={() => handleSelectPaymentMethod(method)}
-                      >
-                        <CreditCard className="h-5 w-5 mr-2" />
-                        {method === "bkash" ? t.bkash : t.nagad}
-                      </Button>
-                    ))}
-                  </div>
-
-                  {/* QR / account / txn input */}
-                  {paymentMethod && (
-                    <div
-                      className={cn(
-                        "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
-                        paymentMethod === "bkash"
-                          ? "border-brand-bkash/60 bg-brand-bkash-soft"
-                          : "border-brand-nagad/60 bg-brand-nagad-soft"
-                      )}
-                    >
-                      <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
-                        <div className="text-left text-sm font-semibold text-foreground">{t.paymentDetails}</div>
-                        {priceLabel && (
-                          <h4 className="font-semibold text-foreground text-sm">
-                            {t.fee}{" "}
-                            <span className="font-bold text-lg text-primary">
-                              {priceLabel}
-                            </span>
-                          </h4>
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5 text-left">
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums",
-                              lowTime ? "bg-destructive/10 text-destructive" : "bg-background/60 text-foreground"
-                            )}
-                          >
-                            {expired ? t.expired : `${t.timeLeft} ${clock}`}
-                          </span>
-                          {expired && (
-                            <Button type="button" size="sm" variant="outline" onClick={() => setTimerRun((n) => n + 1)}>
-                              {t.restart}
-                            </Button>
-                          )}
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-background/60">
-                          <div
-                            className={cn("h-full rounded-full transition-[width] duration-1000 ease-linear", lowTime ? "bg-destructive" : "bg-primary")}
-                            style={{ width: `${(remaining / totalSeconds) * 100}%` }}
-                          />
-                        </div>
-                        <span className="sr-only" aria-live="polite">
-                          {t.timeLeftSr(num(Math.ceil(remaining / 60)))}
-                        </span>
-                      </div>
-
-                      <p className="text-2xl font-mono font-bold text-foreground">
-                        {paymentMethod === "bkash"
-                          ? paymentSettings?.bkash_number
-                          : paymentSettings?.nagad_number}
-                      </p>
-
-                      {(paymentMethod === "bkash"
-                        ? paymentSettings?.bkash_qr_code
-                        : paymentSettings?.nagad_qr_code) && (
-                        <div className="mx-auto w-44 h-44 bg-scan rounded-xl shadow-sm my-4 overflow-hidden border border-border/50">
-                          <img
-                            src={
-                              paymentMethod === "bkash"
-                                ? paymentSettings?.bkash_qr_code!
-                                : paymentSettings?.nagad_qr_code!
-                            }
-                            alt={t.qrAlt(paymentMethod === "bkash" ? t.bkash : t.nagad)}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </div>
-                      )}
-
-                      <p className="text-sm font-medium opacity-80 max-w-[280px] mx-auto">
-                        {t.scanInstruction} {t.windowInstruction(num(windowMins))}
-                      </p>
-
-                      {paymentSettings?.additional_instructions && (
-                        <p className="text-sm text-muted-foreground pt-2 border-t border-border">
-                          {paymentSettings.additional_instructions}
-                        </p>
-                      )}
-
-                      <div className="space-y-1.5 pt-4 text-left">
-                        <Label htmlFor="pm-txnId" className="font-semibold text-sm">
-                          {t.txnLabel}{" "}
-                          <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="pm-txnId"
-                          value={transactionId}
-                          onChange={(e) => setTransactionId(e.target.value)}
-                          placeholder={t.txnPh}
-                          className="font-mono h-11 uppercase bg-background"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <PaymentMethodPanel
+                  method={paymentMethod}
+                  onMethodChange={handleSelectPaymentMethod}
+                  priceLabel={priceLabel}
+                  transactionId={transactionId}
+                  onTransactionIdChange={setTransactionId}
+                  paymentWindow={paymentWindow}
+                />
               )}
 
               {/* ── Free banner ─────────────────────────────── */}
@@ -600,8 +659,8 @@ const PaymentModal = ({
                   {submitting
                     ? t.processing
                     : isFree
-                    ? freeSubmitLabel
-                    : submitLabel}
+                    ? freeSubmitLabel ?? t.confirmFree
+                    : submitLabel ?? t.confirm}
                 </Button>
               </div>
             </div>

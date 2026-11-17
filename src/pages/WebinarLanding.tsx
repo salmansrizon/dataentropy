@@ -554,7 +554,7 @@ const WebinarLanding = () => {
                 onOpenChange={setIsRegistering}
                 title={webinar.title}
                 isFree={webinar.is_free}
-                priceLabel={webinar.price != null ? String(webinar.price) : undefined}
+                priceLabel={webinar.price != null ? `৳${num(Number(webinar.price))}` : undefined}
                 onSubmit={handleRegister}
                 extraFields={[
                     { key: 'role', label: t.roleLabel, placeholder: t.rolePh, required: true }

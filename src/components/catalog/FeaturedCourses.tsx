@@ -3,7 +3,8 @@ import { ArrowRight, Clock } from "lucide-react";
 import LottieAnimation from "@/components/LottieAnimation";
 import { useLang, useT } from "@/i18n/lang";
 import { RevealGroup, RevealItem } from "@/pages/course-details/motion";
-import { hrefFor, isFreeCourse, isRecorded, type Course } from "./items";
+import { hrefFor, isRecorded, type Course } from "./items";
+import { priceCourse } from "@/domain/coursePricing";
 import "./catalog.css";
 
 const T = {
@@ -16,8 +17,7 @@ const BARS = [40, 65, 50, 85, 100];
 function Card({ c, badge, art }: { c: Course; badge?: string; art: "lottie" | "bars" }) {
   const t = useT(T);
   const { num } = useLang();
-  const free = isFreeCourse(c);
-  const price = c.discounted_price && c.discounted_price < c.price ? c.discounted_price : c.price;
+  const p = priceCourse(c);
   return (
     <article className="grid h-full gap-6 rounded-3xl border border-border bg-card p-7 shadow-card sm:grid-cols-[1.2fr_1fr]">
       <div className="flex flex-col">
@@ -29,10 +29,10 @@ function Card({ c, badge, art }: { c: Course; badge?: string; art: "lottie" | "b
           {c.duration_hours ? `${num(c.duration_hours)} ${t.hours}` : t.selfDur}
         </div>
         <div className="mb-5 flex items-baseline gap-2">
-          {free ? <b className="text-lg">{t.free}</b> : (
+          {p.kind === "free" ? <b className="text-lg">{t.free}</b> : (
             <>
-              {price < c.price && <s className="text-sm text-muted-foreground">৳{num(c.price)}</s>}
-              <b className="text-xl text-primary">৳{num(price)}</b>
+              {p.listPrice && <s className="text-sm text-muted-foreground">৳{num(p.listPrice)}</s>}
+              <b className="text-xl text-primary">৳{num(p.charge)}</b>
             </>
           )}
         </div>

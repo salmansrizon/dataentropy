@@ -54,8 +54,8 @@ function Card({ item, i }: { item: Item; i: number }) {
           ) : <span />}
           <span className="flex items-baseline gap-2">
             {/* cut price: original shown struck through when a course is discounted */}
-            {!item.free && item.kind === "course" && item.c.discounted_price && item.c.price > item.c.discounted_price && (
-              <span className="text-sm text-muted-foreground line-through">৳{num(item.c.price)}</span>
+            {!item.free && item.kind === "course" && item.listPrice && (
+              <span className="text-sm text-muted-foreground line-through">৳{num(item.listPrice)}</span>
             )}
             <span className="font-bold text-foreground">{item.free ? t.freeP : `৳${num(item.price)}`}</span>
           </span>

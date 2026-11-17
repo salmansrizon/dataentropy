@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/lang";
 import type { Course } from "./types";
+import { priceCourse } from "@/domain/coursePricing";
 
 interface PriceCardProps {
   course: Course;
@@ -37,14 +38,15 @@ const Price = ({ course, isFree, compact }: { course: Course; isFree: boolean; c
   const t = useT(T);
   const { num } = useLang();
   const size = compact ? "text-xl" : "text-4xl";
-  if (isFree) return <span className={cn(size, "font-bold text-primary")}>{t.free}</span>;
+  const p = priceCourse(course);
+  if (isFree || p.kind === "free") return <span className={cn(size, "font-bold text-primary")}>{t.free}</span>;
   return (
     <div className="flex flex-wrap items-baseline gap-2">
-      <span className={cn(size, "font-bold text-foreground")}>৳{num(Number(course.discounted_price || course.price))}</span>
-      {course.discounted_price ? (
+      <span className={cn(size, "font-bold text-foreground")}>৳{num(p.charge)}</span>
+      {p.listPrice ? (
         <>
-          <span className="text-sm text-muted-foreground line-through">৳{num(Number(course.price))}</span>
-          {course.discount_percentage ? <Badge className="bg-primary/10 text-primary">-{num(Number(course.discount_percentage))}%</Badge> : null}
+          <span className="text-sm text-muted-foreground line-through">৳{num(p.listPrice)}</span>
+          {p.discountPercent ? <Badge className="bg-primary/10 text-primary">-{num(p.discountPercent)}%</Badge> : null}
         </>
       ) : null}
     </div>
